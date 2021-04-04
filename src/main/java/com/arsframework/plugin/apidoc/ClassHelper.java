@@ -27,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
  * Class helper
  *
  * @author Woody
- * @date 2021/3/29
  */
 public final class ClassHelper {
     private ClassHelper() {
@@ -155,7 +154,7 @@ public final class ClassHelper {
      * @param variables Type variable and type mappings
      * @return Type object
      */
-    public static Type getCollectionActualType(Type type, Map<TypeVariable, Type> variables) {
+    public static Type getCollectionActualType(Type type, Map<TypeVariable<?>, Type> variables) {
         Objects.requireNonNull(type, "type not specified");
         if (type instanceof ParameterizedType) {
             Type[] arguments = ((ParameterizedType) type).getActualTypeArguments();
@@ -176,13 +175,13 @@ public final class ClassHelper {
      * @param type Type object
      * @return Type variable and type mappings
      */
-    public static Map<TypeVariable, Type> getVariableParameterizedMappings(Type type) {
-        if (type == null || !(type instanceof ParameterizedType)) {
+    public static Map<TypeVariable<?>, Type> getVariableParameterizedMappings(Type type) {
+        if (!(type instanceof ParameterizedType)) {
             return new HashMap<>(0);
         }
         Type[] types = ((ParameterizedType) type).getActualTypeArguments();
-        TypeVariable[] variables = ((Class<?>) ((ParameterizedType) type).getRawType()).getTypeParameters();
-        Map<TypeVariable, Type> mappings = new HashMap<>(types.length);
+        TypeVariable<?>[] variables = ((Class<?>) ((ParameterizedType) type).getRawType()).getTypeParameters();
+        Map<TypeVariable<?>, Type> mappings = new HashMap<>(types.length);
         for (int i = 0; i < variables.length; i++) {
             mappings.put(variables[i], types[i]);
         }

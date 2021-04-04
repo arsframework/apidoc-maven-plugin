@@ -10,7 +10,6 @@ import lombok.Getter;
  * Api document configuration
  *
  * @author Woody
- * @date 2021/4/4
  */
 @Getter
 @Builder

@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.SessionAttribute;
  * Apidoc analyser
  *
  * @author Woody
- * @date 2021/3/25
  */
 public class ApidocAnalyser {
     /**
@@ -76,7 +75,7 @@ public class ApidocAnalyser {
     /**
      * Class and source mappings
      */
-    private final Map<Class, String> sources = new LinkedHashMap<>();
+    private final Map<Class<?>, String> sources = new LinkedHashMap<>();
 
     /**
      * Source file name and class document mappings
@@ -114,16 +113,15 @@ public class ApidocAnalyser {
         }
         List<Parameter.Option> options = parameter.getOptions();
         if (options != null && !options.isEmpty()) {
-            document.append(" = ").append(String.join(" , ",
-                    options.stream().map(option -> option.getValue() == null ? option.getKey() :
-                            String.format("%s(%s)", option.getKey(), option.getValue())).collect(Collectors.toList())));
+            document.append(" = ").append(options.stream().map(option -> option.getValue() == null ? option.getKey() :
+                    String.format("%s(%s)", option.getKey(), option.getValue())).collect(Collectors.joining(" , ")));
         }
         Parameter.Size size = parameter.getSize();
         if (size != null) {
             String min = size.getMin() == null ? "" :
-                    new BigDecimal(size.getMin()).stripTrailingZeros().toPlainString();
+                    BigDecimal.valueOf(size.getMin()).stripTrailingZeros().toPlainString();
             String max = size.getMax() == null ? "" :
-                    new BigDecimal(size.getMax()).stripTrailingZeros().toPlainString();
+                    BigDecimal.valueOf(size.getMax()).stripTrailingZeros().toPlainString();
             if (Number.class.isAssignableFrom(parameter.getType())) {
                 document.append(String.format(" { %s-%s }", min, max));
             } else {
@@ -164,8 +162,8 @@ public class ApidocAnalyser {
         Class<?> type = parameter.getType();
         List<Parameter> fields = parameter.getFields();
         if (type == Object.class && fields != null && !fields.isEmpty()) {
-            example = String.format("{%s}", String.join(", ", fields.stream().map(f ->
-                    String.format("\"%s\":%s", f.getName(), parameter2example(f))).collect(Collectors.toList())));
+            example = String.format("{%s}", fields.stream().map(f ->
+                    String.format("\"%s\":%s", f.getName(), parameter2example(f))).collect(Collectors.joining(", ")));
         } else if (type == Boolean.class) {
             example = "true";
         } else if (type == String.class) {
@@ -213,7 +211,7 @@ public class ApidocAnalyser {
      * @param clazz Class object
      * @return Class document object
      */
-    private ClassDoc getDocument(Class clazz) {
+    private ClassDoc getDocument(Class<?> clazz) {
         Objects.requireNonNull(clazz, "clazz not specified");
         String name = clazz.getName().replace("$", ".");
         ClassDoc document = this.documents.get(name);
@@ -244,7 +242,7 @@ public class ApidocAnalyser {
      * @throws IOException            IO exception
      * @throws ClassNotFoundException Class not found exception
      */
-    private Class loadClass(File file) throws IOException, ClassNotFoundException {
+    private Class<?> loadClass(File file) throws IOException, ClassNotFoundException {
         Objects.requireNonNull(file, "file not specified");
         String name = file.getName();
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
@@ -349,7 +347,7 @@ public class ApidocAnalyser {
         }
         String packageName = type.getPackage().getName();
         return ClassHelper.isMetaClass(type) || this.configuration.getIncludeGroupIdentities()
-                .stream().anyMatch(group -> packageName.startsWith(group));
+                .stream().anyMatch(packageName::startsWith);
     }
 
     /**
@@ -365,8 +363,8 @@ public class ApidocAnalyser {
 
         // Get apis
         List<Api> apis = this.sources.keySet().stream().filter(ApidocHelper::isApiClass).flatMap(clazz ->
-                Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod).map(m ->
-                        MethodApiParser.parse(m, c -> this.getDocument(c), (p, c) -> this.isRequestParameter(p, c)))
+                Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod).map(method ->
+                        MethodApiParser.parse(method, this::getDocument, this::isRequestParameter))
         ).collect(Collectors.toList());
 
         // Api group define

@@ -56,7 +56,6 @@ import static com.arsframework.plugin.apidoc.ConfigurationHelper.toXpp3Dom;
  * Api document builder
  *
  * @author Woody
- * @date 2020/10/27
  */
 @Execute(phase = LifecyclePhase.COMPILE)
 @Mojo(name = "build", requiresDependencyResolution = ResolutionScope.COMPILE,
@@ -154,7 +153,7 @@ public class ApidocBuildMojo extends AbstractMojo {
      */
     private URLClassLoader initializeClassLoader() throws IOException {
         Set<Artifact> artifacts = this.project.getArtifacts();
-        URL urls[] = new URL[this.compileDirectories.size() + artifacts.size()];
+        URL[] urls = new URL[this.compileDirectories.size() + artifacts.size()];
         int i = 0;
         for (String directory : this.compileDirectories) {
             urls[i++] = new File(directory).toURI().toURL();

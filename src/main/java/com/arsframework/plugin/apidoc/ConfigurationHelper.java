@@ -10,7 +10,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
  * The maven configuration helper
  *
  * @author Woody
- * @date 2020/10/27
  */
 public final class ConfigurationHelper {
     private ConfigurationHelper() {
@@ -199,10 +198,8 @@ public final class ConfigurationHelper {
         public Element(String name, String text, List<Element> children, List<Attribute> attributes) {
             this.name = name;
             this.text = text;
-            this.children = children == null || children.isEmpty() ? null :
-                    children.toArray(new Element[children.size()]);
-            this.attributes = attributes == null || attributes.isEmpty() ? null :
-                    attributes.toArray(new Attribute[attributes.size()]);
+            this.children = children == null || children.isEmpty() ? null : children.toArray(new Element[0]);
+            this.attributes = attributes == null || attributes.isEmpty() ? null : attributes.toArray(new Attribute[0]);
         }
 
         /**

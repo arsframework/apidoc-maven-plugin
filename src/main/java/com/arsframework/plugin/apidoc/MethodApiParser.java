@@ -54,7 +54,6 @@ import org.springframework.web.multipart.MultipartFile;
  * Method api parser
  *
  * @author Woody
- * @date 2021/3/30
  */
 public class MethodApiParser {
     /**
@@ -172,17 +171,17 @@ public class MethodApiParser {
         Objects.requireNonNull(element, "element not specified");
         Size size = element.getAnnotation(Size.class);
         if (size != null) {
-            return Parameter.Size.builder().min(Double.valueOf(size.min())).max(Double.valueOf(size.max())).build();
+            return Parameter.Size.builder().min((double) size.min()).max((double) size.max()).build();
         }
 
         Min min = element.getAnnotation(Min.class);
         Max max = element.getAnnotation(Max.class);
         if (min != null && max != null) {
-            return Parameter.Size.builder().min(Double.valueOf(min.value())).max(Double.valueOf(max.value())).build();
+            return Parameter.Size.builder().min((double) min.value()).max((double) max.value()).build();
         } else if (min != null) {
-            return Parameter.Size.builder().min(Double.valueOf(min.value())).build();
+            return Parameter.Size.builder().min((double) min.value()).build();
         } else if (max != null) {
-            return Parameter.Size.builder().max(Double.valueOf(max.value())).build();
+            return Parameter.Size.builder().max((double) max.value()).build();
         }
 
         DecimalMin decimalMin = element.getAnnotation(DecimalMin.class);
@@ -486,7 +485,7 @@ public class MethodApiParser {
      * @param stack     Class stack
      * @return Parameter object
      */
-    private Parameter field2parameter(Field field, Map<TypeVariable, Type> variables, LinkedList<Class<?>> stack) {
+    private Parameter field2parameter(Field field, Map<TypeVariable<?>, Type> variables, LinkedList<Class<?>> stack) {
         Objects.requireNonNull(field, "field not specified");
         Type type = field.getGenericType();
         Class<?> clazz = ClassHelper.type2class(type), target = clazz;
@@ -495,14 +494,14 @@ public class MethodApiParser {
         } else if (Collection.class.isAssignableFrom(clazz)) {
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
-        Boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
+        boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
         Parameter parameter = Parameter.builder().type(getType(target)).original(target).name(getName(field))
                 .size(getSize(field)).format(getFormat(field)).required(isRequired(field)).multiple(multiple)
                 .deprecated(isDeprecated(field)).defaultValue(getDefaultValue(field))
                 .description(this.getDescription(field)).options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target) && !isRecursion(stack, target)) {
             stack.addLast(target);
-            Map<TypeVariable, Type> finalVariables = ClassHelper.getVariableParameterizedMappings(type);
+            Map<TypeVariable<?>, Type> finalVariables = ClassHelper.getVariableParameterizedMappings(type);
             parameter.setFields(class2parameters(target, f -> this.field2parameter(f, finalVariables, stack)));
             stack.removeLast();
         }
@@ -522,21 +521,21 @@ public class MethodApiParser {
             if (clazz.isArray()) {
                 target = clazz.getComponentType();
             } else if (Collection.class.isAssignableFrom(clazz)) {
-                Map<TypeVariable, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
+                Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
                 target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
             }
             if (!this.parameterValidator.apply(parameter, target)) {
                 continue;
             }
             if (ClassHelper.isMetaClass(target)) {
-                Boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
+                boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
                 parameters.add(Parameter.builder().type(getType(target)).original(target).name(getName(parameter))
                         .size(getSize(parameter)).format(getFormat(parameter)).required(isRequired(parameter))
                         .multiple(multiple).deprecated(isDeprecated(parameter)).defaultValue(getDefaultValue(parameter))
                         .description(this.getDescription(parameter)).options(this.getOptions(target)).build());
             } else {
                 LinkedList<Class<?>> stack = new LinkedList<>();
-                Map<TypeVariable, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
+                Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
                 parameters.addAll(class2parameters(target, f -> this.field2parameter(f, variables, stack)));
             }
         }
@@ -557,17 +556,17 @@ public class MethodApiParser {
         if (clazz.isArray()) {
             target = clazz.getComponentType();
         } else if (Collection.class.isAssignableFrom(clazz)) {
-            Map<TypeVariable, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
+            Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
-        Boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
+        boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
         Parameter parameter = Parameter.builder().type(getType(target)).original(target).multiple(multiple).name("/")
                 .description(ApidocHelper.getReturnNote(this.getDocument(this.method)))
                 .options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target)) {
             LinkedList<Class<?>> stack = new LinkedList<>();
             stack.addLast(target);
-            Map<TypeVariable, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
+            Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
             parameter.setFields(class2parameters(target, f -> this.field2parameter(f, variables, stack)));
         }
         return parameter;

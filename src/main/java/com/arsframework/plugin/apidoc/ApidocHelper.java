@@ -27,7 +27,6 @@ import org.springframework.web.multipart.MultipartFile;
  * Apidoc helper
  *
  * @author Woody
- * @date 2021/3/26
  */
 public final class ApidocHelper {
     /**
@@ -122,7 +121,7 @@ public final class ApidocHelper {
      * @param clazz Class object
      * @return URL mapping
      */
-    private static String getClassMapping(Class clazz) {
+    private static String getClassMapping(Class<?> clazz) {
         String mapping;
         Annotation annotation;
         if ((annotation = clazz.getAnnotation(Controller.class)) != null
@@ -321,7 +320,7 @@ public final class ApidocHelper {
      */
     public static String getCommentOutline(Doc document) {
         List<String> lines = getCommentLines(document);
-        return lines == null || lines.isEmpty() ? null : lines.get(0);
+        return lines.isEmpty() ? null : lines.get(0);
     }
 
     /**
@@ -332,8 +331,7 @@ public final class ApidocHelper {
      */
     public static String getCommentDescription(Doc document) {
         List<String> lines = getCommentLines(document);
-        return lines == null || lines.size() < 2 ? null :
-                String.join(ENTER_DEFINITION_NAME, lines.subList(1, lines.size()));
+        return lines.size() < 2 ? null : String.join(ENTER_DEFINITION_NAME, lines.subList(1, lines.size()));
     }
 
     /**
@@ -354,9 +352,8 @@ public final class ApidocHelper {
                 continue;
             }
             for (String line : document.getRawCommentText().trim().split(ENTER_DEFINITION_NAME)) {
-                if ((line = line.trim()).isEmpty()) {
-                    continue;
-                } else if (line.startsWith(name) && !(note = line.substring(name.length()).trim()).isEmpty()) {
+                if (!(line = line.trim()).isEmpty() && line.startsWith(name)
+                        && !(note = line.substring(name.length()).trim()).isEmpty()) {
                     return note;
                 }
             }
