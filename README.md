@@ -2,7 +2,11 @@
 该插件用于自动扫描Java接口注释并生成[apidoc](https://apidocjs.com)接口文档。
 
 ## 1 环境依赖
-JDK1.8+
+- Java JDK1.8+
+- Node node@14.16.0
+- Apidoc apidoc@0.24.0
+
+注意：以上apidoc版本仅供参考，在某些高版本环境下可能会出现对象参数字段乱序问题。
 
 ## 2 部署配置
 在Maven配置中添加如下依赖：
