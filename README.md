@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </plugin>
 ```
 
@@ -34,15 +34,18 @@
 #### 3.1.3 ```enableSampleRequest```
 是否启用接口请求，默认为```false```。
 
-如果参数值为```true```，接口文档将展示接口请求表单，否则在将接口文档中插入```@apiSampleRequest off```标记来关闭该功能。
+如果参数值为```true```，接口文档将展示接口请求表单，否则在将接口文档中插入```@apiSampleRequest off```标记来关闭该功能，该参数需要与```apidoc.json```里面的```sampleUrl```参数配合使用。
 
 #### 3.1.4 ```includeGroupIdentities```
 接口文档所包含的Maven```groupId```列表，多个值之间使用","号隔开，默认包含当前项目的Group Identity。
 
 插件将根据该配置下载依赖包源码，并从这些源码中去解析接口文档信息，其中接口参数的解析与否也与此参数有关（详情请查看接口解析说明）。
 
-#### 3.1.4 ```output```
+#### 3.1.5 ```output```
 接口文档输出文件，默认为```${project.basedir}/${project.name}.apidoc```
+
+#### 3.1.6 ```enableResponseExample```
+是否启用响应参数示例，默认为```true```。
 
 ### 3.2 接口解析
 插件根据```includeGroupIdentities```参数的值将源码下载并解压到指定目录中（默认```${project.build.directory}/sources```），然后根据源码加载对应的Class对象并通过Java反射机制查找符合条件的接口方法，然后通过解析对应的源码文档生成```com.arsframework.plugin.apidoc.Api```对象，最后统一转换成apidoc工具能够识别的接口文档文件。
@@ -63,7 +66,7 @@
 针对枚举类型参数将解析枚举所有选贤值，并将其作为参数描述的以部分；针对递归参数将向下获取一级。
 
 #### 3.2.4 响应参数示例
-插件自动根据返回参数生成响应示例（JSON格式），具体参数类型生成示例的规则如下：
+插件将自动获取方法或字段注释中的```@example```参数值，如果没有则根据返回参数生成响应示例（JSON格式），具体参数类型生成示例的规则如下：
 
 - 整形数字
 
@@ -90,3 +93,7 @@
 所有字节流类型都将生成```[0b00000001]```，字节流类型包括：```java.io.File```、```java.io.Reader```、```java.io.OutputStream```、```java.io.Writer```、```org.springframework.web.multipart.MultipartFile```、```java.io.InputStream```、```org.springframework.core.io.InputStreamSource```。
 
 ## 4 版本更新日志
+### v1.1.0
+1. 新增对方法、字段注释中的```@example```参数解析，在获取响应参数示例时优先获取该参数配置；
+2. 新增是否启用响应示例参数```enableResponseExample```，默认为```true```；
+3. 修复响应参数示例生成逻辑问题；

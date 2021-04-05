@@ -158,34 +158,34 @@ public class ApidocAnalyser {
      */
     private static String parameter2example(Parameter parameter) {
         Objects.requireNonNull(parameter, "parameter not specified");
-        String example = null;
         Class<?> type = parameter.getType();
+        String example = parameter.getExample();
         List<Parameter> fields = parameter.getFields();
         if (type == Object.class && fields != null && !fields.isEmpty()) {
             example = String.format("{%s}", fields.stream().map(f ->
                     String.format("\"%s\":%s", f.getName(), parameter2example(f))).collect(Collectors.joining(", ")));
         } else if (type == Boolean.class) {
-            example = "true";
+            example = example == null ? "true" : example;
         } else if (type == String.class) {
             if (parameter.getOriginal() == Locale.class) {
-                example = String.format("\"%s\"", Locale.getDefault());
+                example = String.format("\"%s\"", example == null ? Locale.getDefault() : example);
             } else if (parameter.getOriginal() == TimeZone.class) {
-                example = TimeZone.getDefault().getID();
+                example = String.format("\"%s\"", example == null ? TimeZone.getDefault().getID() : example);
             } else {
                 List<Parameter.Option> options = parameter.getOptions();
-                example = options == null || options.isEmpty() ? "\"\"" :
-                        String.format("\"%s\"", options.get(0).getKey());
+                example = String.format("\"%s\"", example == null ?
+                        options == null || options.isEmpty() ? "" : options.get(0).getKey() : example);
             }
         } else if (ClassHelper.isIntClass(type)) {
-            example = "1";
+            example = example == null ? "1" : example;
         } else if (ClassHelper.isFloatClass(type)) {
-            example = "1.0";
+            example = example == null ? "1.0" : example;
         } else if (type == Date.class) {
             String format = parameter.getFormat();
-            example = format == null ? String.valueOf(System.currentTimeMillis()) :
-                    DateTimeFormatter.ofPattern(format).format(LocalDateTime.now());
+            example = example == null ? format == null ? String.valueOf(System.currentTimeMillis()) :
+                    String.format("\"%s\"", DateTimeFormatter.ofPattern(format).format(LocalDateTime.now())) : example;
         } else if (ClassHelper.isStreamClass(type)) {
-            example = "[0b00000001]";
+            example = example == null ? "[0b00000001]" : example;
         }
         return parameter.isMultiple() ? example == null ? "[]" : String.format("[%s]", example) : example;
     }
@@ -265,10 +265,7 @@ public class ApidocAnalyser {
      * @throws ClassNotFoundException Class not found exception
      */
     private void initializeClasses(File directory) throws IOException, ClassNotFoundException {
-        if (directory == null || !directory.isDirectory()) {
-            return;
-        }
-        for (File file : directory.listFiles()) {
+        for (File file : ApidocHelper.listDirectoryFiles(directory)) {
             if (file.isDirectory()) {
                 this.initializeClasses(file);
             } else if (file.getName().endsWith(SOURCE_FILE_SUFFIX)
@@ -327,8 +324,10 @@ public class ApidocAnalyser {
             } else {
                 fields.forEach(field -> document.append(parameter2document("@apiSuccess", null, field, true)));
             }
-            document.append("\n * @apiSuccessExample Response");
-            document.append("\n *\n * ").append(parameter2example(returned));
+            if (this.configuration.isEnableResponseExample()) {
+                document.append("\n * @apiSuccessExample Response");
+                document.append("\n *\n * ").append(parameter2example(returned));
+            }
         }
         document.append("\n */\n");
         return document.toString();

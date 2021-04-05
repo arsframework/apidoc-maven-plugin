@@ -494,10 +494,11 @@ public class MethodApiParser {
         } else if (Collection.class.isAssignableFrom(clazz)) {
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
+        String example = ApidocHelper.getExampleNote(this.getDocument(field));
         boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
         Parameter parameter = Parameter.builder().type(getType(target)).original(target).name(getName(field))
                 .size(getSize(field)).format(getFormat(field)).required(isRequired(field)).multiple(multiple)
-                .deprecated(isDeprecated(field)).defaultValue(getDefaultValue(field))
+                .example(example).deprecated(isDeprecated(field)).defaultValue(getDefaultValue(field))
                 .description(this.getDescription(field)).options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target) && !isRecursion(stack, target)) {
             stack.addLast(target);
@@ -559,9 +560,10 @@ public class MethodApiParser {
             Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
+        String example = ApidocHelper.getExampleNote(this.getDocument(this.method));
         boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
         Parameter parameter = Parameter.builder().type(getType(target)).original(target).multiple(multiple).name("/")
-                .description(ApidocHelper.getReturnNote(this.getDocument(this.method)))
+                .example(example).description(ApidocHelper.getReturnNote(this.getDocument(this.method)))
                 .options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target)) {
             LinkedList<Class<?>> stack = new LinkedList<>();

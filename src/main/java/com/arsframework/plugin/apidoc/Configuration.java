@@ -30,6 +30,11 @@ public class Configuration {
     private boolean enableSampleRequest;
 
     /**
+     * Whether the response example is enabled
+     */
+    private boolean enableResponseExample;
+
+    /**
      * Include group identities
      */
     @Builder.Default

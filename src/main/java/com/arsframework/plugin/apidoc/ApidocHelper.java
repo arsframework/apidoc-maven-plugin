@@ -1,10 +1,15 @@
 package com.arsframework.plugin.apidoc;
 
+import java.io.File;
+import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
@@ -54,6 +59,11 @@ public final class ApidocHelper {
      */
     private static final String RETURN_DEFINITION_NAME = "@return";
 
+    /**
+     * Example definition name
+     */
+    private static final String EXAMPLE_DEFINITION_NAME = "@example";
+
     private ApidocHelper() {
     }
 
@@ -88,8 +98,8 @@ public final class ApidocHelper {
      * @return true/false
      */
     public static boolean isApiDeprecated(Method method) {
-        return method == null ? false : method.isAnnotationPresent(Deprecated.class)
-                || method.getDeclaringClass().isAnnotationPresent(Deprecated.class);
+        return method != null && (method.isAnnotationPresent(Deprecated.class)
+                || method.getDeclaringClass().isAnnotationPresent(Deprecated.class));
     }
 
     /**
@@ -411,5 +421,67 @@ public final class ApidocHelper {
      */
     public static String getReturnNote(Doc... documents) {
         return getAnnotationNote(RETURN_DEFINITION_NAME, documents);
+    }
+
+    /**
+     * Get example note from document
+     *
+     * @param documents Document object array
+     * @return Api parameter example
+     */
+    public static String getExampleNote(Doc... documents) {
+        return getAnnotationNote(EXAMPLE_DEFINITION_NAME, documents);
+    }
+
+    /**
+     * Get files of directory
+     *
+     * @param directory File directory
+     * @return File list
+     */
+    public static List<File> listDirectoryFiles(File directory) {
+        File[] files;
+        if (directory != null && directory.exists() && directory.isDirectory()
+                && (files = directory.listFiles()) != null) {
+            return Arrays.asList(files);
+        }
+        return Collections.emptyList();
+    }
+
+    /**
+     * Copy file directory
+     *
+     * @param source Source directory
+     * @param target Target directory
+     * @throws IOException IO exception
+     */
+    public static void copyDirectory(File source, File target) throws IOException {
+        if (source == null || target == null) {
+            return;
+        } else if (!target.exists()) {
+            target.mkdirs();
+        }
+        for (File file : listDirectoryFiles(source)) {
+            File to = new File(target, file.getName());
+            if (file.isFile()) {
+                Files.copy(file.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                copyDirectory(file, to);
+            }
+        }
+    }
+
+    /**
+     * Remove file directory
+     *
+     * @param directory File directory
+     */
+    public static void removeDirectory(File directory) {
+        if (directory != null && directory.exists()) {
+            for (File file : listDirectoryFiles(directory)) {
+                removeDirectory(file);
+            }
+            directory.delete();
+        }
     }
 }

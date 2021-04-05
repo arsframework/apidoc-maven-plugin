@@ -23,8 +23,6 @@ import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -101,45 +99,16 @@ public class ApidocBuildMojo extends AbstractMojo {
     private boolean enableSampleRequest;
 
     /**
-     * Copy file directory
-     *
-     * @param source Source directory
-     * @param target Target directory
-     * @throws IOException IO exception
+     * Whether the response example is enabled
      */
-    private static void copyDirectory(File source, File target) throws IOException {
-        if (source == null || target == null || !source.exists() || !source.isDirectory() || target.isFile()) {
-            return;
-        }
-        if (!target.exists()) {
-            target.mkdirs();
-        }
-        for (File file : source.listFiles()) {
-            File to = new File(target, file.getName());
-            if (file.isFile()) {
-                Files.copy(file.toPath(), to.toPath(), StandardCopyOption.REPLACE_EXISTING);
-            } else {
-                copyDirectory(file, to);
-            }
-        }
-    }
+    @Parameter(defaultValue = "true", required = true)
+    private boolean enableResponseExample;
 
     /**
-     * Remove file directory
+     * Get include group identities
      *
-     * @param directory File directory
+     * @return Group identity set
      */
-    private static void removeDirectory(File directory) {
-        if (directory != null && directory.exists()) {
-            if (directory.isDirectory()) {
-                for (File child : directory.listFiles()) {
-                    removeDirectory(child);
-                }
-            }
-            directory.delete();
-        }
-    }
-
     private Set<String> getIncludeGroupIdentities() {
         return Stream.of(this.includeGroupIdentities.split("[, ]"))
                 .filter(group -> group != null && !group.isEmpty()).collect(Collectors.toSet());
@@ -200,7 +169,7 @@ public class ApidocBuildMojo extends AbstractMojo {
         List<String> roots = this.project.getCompileSourceRoots();
         if (roots != null && !roots.isEmpty()) {
             for (String root : roots) {
-                copyDirectory(new File(root), new File(this.dependencySourceDirectory));
+                ApidocHelper.copyDirectory(new File(root), new File(this.dependencySourceDirectory));
             }
         }
     }
@@ -213,6 +182,7 @@ public class ApidocBuildMojo extends AbstractMojo {
             URLClassLoader classLoader = this.initializeClassLoader();
             Configuration configuration = Configuration.builder().displayDate(this.displayDate)
                     .displayAuthor(this.displayAuthor).enableSampleRequest(this.enableSampleRequest)
+                    .enableResponseExample(this.enableResponseExample)
                     .includeGroupIdentities(this.getIncludeGroupIdentities()).build();
             try (Writer writer = new BufferedWriter(new FileWriter(this.output))) {
                 ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, writer);
@@ -221,7 +191,7 @@ public class ApidocBuildMojo extends AbstractMojo {
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {
-            removeDirectory(new File(this.dependencySourceDirectory));
+            ApidocHelper.removeDirectory(new File(this.dependencySourceDirectory));
         }
     }
 }

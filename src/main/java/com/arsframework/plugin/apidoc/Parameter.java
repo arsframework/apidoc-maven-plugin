@@ -43,6 +43,11 @@ public class Parameter {
     private String format;
 
     /**
+     * Parameter example
+     */
+    private String example;
+
+    /**
      * Parameter is required
      */
     private boolean required;
