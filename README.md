@@ -14,12 +14,14 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.1.0</version>
+    <version>1.1.1</version>
 </plugin>
 ```
 
 ## 3 功能描述
 插件将自动扫描所有接口的文档注释，并将接口注释按照apidoc的结构保存到指定文件中，默认存储到当前项目根目录下的${projectName}.apidoc文件中。插件通过解析第三方注解的方式加载接口参数的验证信息，比如参数长度、是否必须、参数格式等。另外还可以通过参数配置控制文档参数显示与否，比如接口作者、日期等。
+
+接口文档构建完成后可以通过命令```apidoc -f projectName.apidoc -o ./apidoc```生成Html文档，详情参考[apidoc官方文档](https://apidocjs.com)。
 
 ### 3.1 插件参数
 #### 3.1.1 ```displayDate```
@@ -42,7 +44,7 @@
 插件将根据该配置下载依赖包源码，并从这些源码中去解析接口文档信息，其中接口参数的解析与否也与此参数有关（详情请查看接口解析说明）。
 
 #### 3.1.5 ```output```
-接口文档输出文件，默认为```${project.basedir}/${project.name}.apidoc```
+接口文档输出文件，默认为```${project.basedir}/${project.name}.apidoc```。
 
 #### 3.1.6 ```enableResponseExample```
 是否启用响应参数示例，默认为```true```。
@@ -97,3 +99,8 @@
 1. 新增对方法、字段注释中的```@example```参数解析，在获取响应参数示例时优先获取该参数配置；
 2. 新增是否启用响应示例参数```enableResponseExample```，默认为```true```；
 3. 修复响应参数示例生成逻辑问题；
+
+### v1.1.1
+1. 修复请求参数过滤时空指针异常问题；
+2. 修复接口分组混乱问题；
+3. 优化接口文件写入逻辑；

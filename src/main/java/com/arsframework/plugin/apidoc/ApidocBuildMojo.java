@@ -16,11 +16,8 @@ package com.arsframework.plugin.apidoc;
  * limitations under the License.
  */
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.List;
@@ -184,10 +181,8 @@ public class ApidocBuildMojo extends AbstractMojo {
                     .displayAuthor(this.displayAuthor).enableSampleRequest(this.enableSampleRequest)
                     .enableResponseExample(this.enableResponseExample)
                     .includeGroupIdentities(this.getIncludeGroupIdentities()).build();
-            try (Writer writer = new BufferedWriter(new FileWriter(this.output))) {
-                ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, writer);
-            }
-            getLog().info(String.format("Api document built successfully (%s)", this.output));
+            ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, this.output);
+            this.getLog().info(String.format("API document built successfully (%s)", this.output));
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {

@@ -1,8 +1,10 @@
 package com.arsframework.plugin.apidoc;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.math.BigDecimal;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -196,13 +199,13 @@ public class ApidocAnalyser {
      * @param classLoader     Class loader object
      * @param sourceDirectory Source directory
      * @param configuration   Api document configuration
-     * @param writer          Document writer
+     * @param output          Api document file
      * @throws IOException            IO exception
      * @throws ClassNotFoundException Class not found exception
      */
     public static void parse(URLClassLoader classLoader, String sourceDirectory,
-                             Configuration configuration, Writer writer) throws IOException, ClassNotFoundException {
-        new ApidocAnalyser(classLoader, sourceDirectory, configuration).execute(writer);
+                             Configuration configuration, String output) throws IOException, ClassNotFoundException {
+        new ApidocAnalyser(classLoader, sourceDirectory, configuration).execute(output);
     }
 
     /**
@@ -343,47 +346,54 @@ public class ApidocAnalyser {
     private boolean isRequestParameter(java.lang.reflect.Parameter parameter, Class<?> type) {
         if (parameter == null || type == null || parameter.isAnnotationPresent(SessionAttribute.class)) {
             return false;
+        } else if (ClassHelper.isMetaClass(type)) {
+            return true;
         }
-        String packageName = type.getPackage().getName();
-        return ClassHelper.isMetaClass(type) || this.configuration.getIncludeGroupIdentities()
-                .stream().anyMatch(packageName::startsWith);
+        Package pkg = type.getPackage();
+        Set<String> includeGroupIdentities = this.configuration.getIncludeGroupIdentities();
+        return pkg != null && includeGroupIdentities != null && !includeGroupIdentities.isEmpty()
+                && includeGroupIdentities.stream().anyMatch(pkg.getName()::startsWith);
     }
 
     /**
      * Api document analysis executing
      *
-     * @param writer Api document writer
+     * @param output Api document file
      * @throws IOException            IO exception
      * @throws ClassNotFoundException Class not found exception
      */
-    private void execute(Writer writer) throws IOException, ClassNotFoundException {
-        Objects.requireNonNull(writer, "writer not specified");
+    private void execute(String output) throws IOException, ClassNotFoundException {
+        Objects.requireNonNull(output, "output not specified");
         this.initializeClasses(new File(this.sourceDirectory));
 
-        // Get apis
+        // Build apis
         List<Api> apis = this.sources.keySet().stream().filter(ApidocHelper::isApiClass).flatMap(clazz ->
                 Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod).map(method ->
                         MethodApiParser.parse(method, this::getDocument, this::isRequestParameter))
         ).collect(Collectors.toList());
 
-        // Api group define
-        Map<String, String> groups = new LinkedHashMap<>();
-        int index = 1;
-        for (Api api : apis) {
-            if (groups.containsKey(api.getGroup())) {
-                continue;
+        // Write document file
+        try (Writer writer = new BufferedWriter(new FileWriter(output))) {
+            // Override api group
+            Map<String, String> groupDefineMappings = new LinkedHashMap<>();
+            int index = 1;
+            for (Api api : apis) {
+                String group = api.getGroup();
+                String define = groupDefineMappings.get(group);
+                if (define == null) {
+                    define = "Group" + index++;
+                    groupDefineMappings.put(group, define);
+                    writer.write("\n/**");
+                    writer.write("\n * @apiDefine ".concat(define).concat(" ").concat(group));
+                    writer.write("\n */\n");
+                }
+                api.setGroup(define);
             }
-            String group = "Group" + index++;
-            groups.put(api.getGroup(), group);
-            writer.write("\n/**");
-            writer.write("\n * @apiDefine ".concat(group).concat(" ").concat(api.getGroup()));
-            writer.write("\n */\n");
-            api.setGroup(group);
-        }
 
-        // Build api document
-        for (Api api : apis) {
-            writer.write(this.api2document(api));
+            // Build api document
+            for (Api api : apis) {
+                writer.write(this.api2document(api));
+            }
         }
     }
 
