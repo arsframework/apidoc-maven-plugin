@@ -288,7 +288,7 @@ public class ApidocAnalyser {
         Objects.requireNonNull(api, "api not specified");
         StringBuilder document = new StringBuilder();
         document.append("\n/**");
-        document.append("\n * @api { ").append(String.join(" | ", api.getMethods())).append(" } ")
+        document.append("\n * @api {").append(String.join(" | ", api.getMethods())).append("} ")
                 .append(api.getUrl()).append(" ").append(api.getName());
         if (!this.configuration.isEnableSampleRequest()) {
             document.append("\n * @apiSampleRequest off");
@@ -371,6 +371,10 @@ public class ApidocAnalyser {
                 Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod).map(method ->
                         MethodApiParser.parse(method, this::getDocument, this::isRequestParameter))
         ).collect(Collectors.toList());
+        if (apis.isEmpty()) {
+            this.configuration.getLog().info("There is no API for building document");
+            return;
+        }
 
         // Write document file
         try (Writer writer = new BufferedWriter(new FileWriter(output))) {
@@ -395,6 +399,7 @@ public class ApidocAnalyser {
                 writer.write(this.api2document(api));
             }
         }
+        this.configuration.getLog().info(String.format("API document built successfully (%s)", output));
     }
 
     /**

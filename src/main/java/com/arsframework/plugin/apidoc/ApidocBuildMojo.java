@@ -177,12 +177,11 @@ public class ApidocBuildMojo extends AbstractMojo {
             this.unpackDependencies();
             this.unpackProjectSources();
             URLClassLoader classLoader = this.initializeClassLoader();
-            Configuration configuration = Configuration.builder().displayDate(this.displayDate)
+            Configuration configuration = Configuration.builder().log(this.getLog()).displayDate(this.displayDate)
                     .displayAuthor(this.displayAuthor).enableSampleRequest(this.enableSampleRequest)
                     .enableResponseExample(this.enableResponseExample)
                     .includeGroupIdentities(this.getIncludeGroupIdentities()).build();
             ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, this.output);
-            this.getLog().info(String.format("API document built successfully (%s)", this.output));
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {

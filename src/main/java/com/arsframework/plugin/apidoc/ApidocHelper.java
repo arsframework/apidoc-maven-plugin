@@ -266,7 +266,7 @@ public final class ApidocHelper {
         if (methods.isEmpty()) {
             methods.addAll(Arrays.asList(RequestMethod.values()));
         }
-        return methods.stream().distinct().map(RequestMethod::name).collect(Collectors.toList());
+        return methods.stream().distinct().map(m -> m.name().toLowerCase()).collect(Collectors.toList());
     }
 
     /**

@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.1.1</version>
+    <version>1.1.2</version>
 </plugin>
 ```
 
@@ -104,3 +104,7 @@
 1. 修复请求参数过滤时空指针异常问题；
 2. 修复接口分组混乱问题；
 3. 优化接口文件写入逻辑；
+
+### v1.1.2
+1. 将接口请求方式改为小写；
+2. 优化接口文件写入逻辑，如果项目没有接口则无需生成接口文件；
