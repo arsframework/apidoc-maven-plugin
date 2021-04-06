@@ -21,7 +21,7 @@
 ## 3 功能描述
 插件将自动扫描所有接口的文档注释，并将接口注释按照apidoc的结构保存到指定文件中，默认存储到当前项目根目录下的${projectName}.apidoc文件中。插件通过解析第三方注解的方式加载接口参数的验证信息，比如参数长度、是否必须、参数格式等。另外还可以通过参数配置控制文档参数显示与否，比如接口作者、日期等。
 
-接口文档构建完成后可以通过命令```apidoc -f projectName.apidoc -o ./apidoc```生成Html文档，详情参考[apidoc官方文档](https://apidocjs.com)。
+接口文档构建完成后可以通过命令```apidoc -f projectName.apidoc -o ./apidoc```生成Html文档，详情参考[apidoc官方文档](https://apidocjs.com)。也可以通过```apidoc-swagger```工具生成```swagger.json```，详情参考[apidoc-swagger官方文档](https://www.npmjs.com/package/apidoc-swagger)。
 
 ### 3.1 插件参数
 #### 3.1.1 ```displayDate```
@@ -65,7 +65,7 @@
 #### 3.2.3 请求参数描述
 插件通过对一些第三方框架解析来生成参数描述信息，具体支持的参数注解包括：```javax.validation.constraints.Max```、```javax.validation.constraints.Min```、```javax.validation.constraints.Size```、```javax.validation.constraints.Pattern```、```javax.validation.constraints.NotNull```、```javax.validation.constraints.NotEmpty```、```javax.validation.constraints.NotBlank```、```javax.validation.constraints.DecimalMax```、```javax.validation.constraints.DecimalMin```、```com.fasterxml.jackson.annotation.JsonFormat```、```com.fasterxml.jackson.annotation.JsonProperty```、```com.fasterxml.jackson.annotation.JsonSubTypes```、```com.fasterxml.jackson.annotation.JsonTypeInfo```、```org.springframework.format.annotation.DateTimeFormat```、```org.springframework.web.bind.annotation.RequestParam```、```lombok.Builder.Default```。
 
-针对枚举类型参数将解析枚举所有选贤值，并将其作为参数描述的以部分；针对递归参数将向下获取一级。
+针对枚举类型参数将解析枚举所有选项值，并将其作为参数描述的以部分；针对递归参数将向下获取一级。
 
 #### 3.2.4 响应参数示例
 插件将自动获取方法或字段注释中的```@example```参数值，如果没有则根据返回参数生成响应示例（JSON格式），具体参数类型生成示例的规则如下：
