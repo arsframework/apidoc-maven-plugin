@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.1.2</version>
+    <version>1.1.3</version>
 </plugin>
 ```
 
@@ -108,3 +108,6 @@
 ### v1.1.2
 1. 将接口请求方式改为小写；
 2. 优化接口文件写入逻辑，如果项目没有接口则无需生成接口文件；
+
+### v1.1.3
+1. 修复泛型类型解析失败问题；

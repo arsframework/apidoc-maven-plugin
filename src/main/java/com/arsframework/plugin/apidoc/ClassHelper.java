@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -177,7 +178,7 @@ public final class ClassHelper {
      */
     public static Map<TypeVariable<?>, Type> getVariableParameterizedMappings(Type type) {
         if (!(type instanceof ParameterizedType)) {
-            return new HashMap<>(0);
+            return Collections.emptyMap();
         }
         Type[] types = ((ParameterizedType) type).getActualTypeArguments();
         TypeVariable<?>[] variables = ((Class<?>) ((ParameterizedType) type).getRawType()).getTypeParameters();

@@ -488,6 +488,9 @@ public class MethodApiParser {
     private Parameter field2parameter(Field field, Map<TypeVariable<?>, Type> variables, LinkedList<Class<?>> stack) {
         Objects.requireNonNull(field, "field not specified");
         Type type = field.getGenericType();
+        if (type instanceof TypeVariable && variables != null && variables.containsKey(type)) {
+            type = variables.get(type);
+        }
         Class<?> clazz = ClassHelper.type2class(type), target = clazz;
         if (clazz.isArray()) {
             target = clazz.getComponentType();
