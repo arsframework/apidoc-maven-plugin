@@ -102,6 +102,12 @@ public class ApidocBuildMojo extends AbstractMojo {
     private boolean enableResponseExample;
 
     /**
+     * Whether the snake and underline conversion is enabled
+     */
+    @Parameter(defaultValue = "false", required = true)
+    private boolean enableSnakeUnderlineConversion;
+
+    /**
      * Get include group identities
      *
      * @return Group identity set
@@ -180,6 +186,7 @@ public class ApidocBuildMojo extends AbstractMojo {
             Configuration configuration = Configuration.builder().log(this.getLog()).displayDate(this.displayDate)
                     .displayAuthor(this.displayAuthor).enableSampleRequest(this.enableSampleRequest)
                     .enableResponseExample(this.enableResponseExample)
+                    .enableSnakeUnderlineConversion(this.enableSnakeUnderlineConversion)
                     .includeGroupIdentities(this.getIncludeGroupIdentities()).build();
             ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, this.output);
         } catch (Exception e) {

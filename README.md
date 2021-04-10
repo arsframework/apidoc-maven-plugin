@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.1.3</version>
+    <version>1.2.0</version>
 </plugin>
 ```
 
@@ -49,6 +49,9 @@
 #### 3.1.6 ```enableResponseExample```
 是否启用响应参数示例，默认为```true```。
 
+#### 3.1.7 ```enableSnakeUnderlineConversion```
+是否启动将参数格式由驼峰转为下划线，默认```false```。如果参数已使用```com.arsframework.spring.web.utils.param.Rename```、```com.fasterxml.jackson.annotation.JsonProperty```、```com.fasterxml.jackson.databind.annotation.JsonNaming```注解，则忽略该参数。
+
 ### 3.2 接口解析
 插件根据```includeGroupIdentities```参数的值将源码下载并解压到指定目录中（默认```${project.build.directory}/sources```），然后根据源码加载对应的Class对象并通过Java反射机制查找符合条件的接口方法，然后通过解析对应的源码文档生成```com.arsframework.plugin.apidoc.Api```对象，最后统一转换成apidoc工具能够识别的接口文档文件。
 
@@ -63,7 +66,17 @@
 元类型包括：```java.util.Map```、```java.lang.Enum```、```java.lang.Number```、```java.util.Locale```、```java.util.TimeZone```、```java.lang.CharSequence```、```java.util.Date```、```java.time.LocalDate```、```java.time.LocalDateTime```、```java.io.File```、```java.io.Reader```、```java.io.OutputStream```、```java.io.Writer```、```org.springframework.web.multipart.MultipartFile```、```java.io.InputStream```、```org.springframework.core.io.InputStreamSource```。
 
 #### 3.2.3 请求参数描述
-插件通过对一些第三方框架解析来生成参数描述信息，具体支持的参数注解包括：```javax.validation.constraints.Max```、```javax.validation.constraints.Min```、```javax.validation.constraints.Size```、```javax.validation.constraints.Pattern```、```javax.validation.constraints.NotNull```、```javax.validation.constraints.NotEmpty```、```javax.validation.constraints.NotBlank```、```javax.validation.constraints.DecimalMax```、```javax.validation.constraints.DecimalMin```、```com.fasterxml.jackson.annotation.JsonFormat```、```com.fasterxml.jackson.annotation.JsonProperty```、```com.fasterxml.jackson.annotation.JsonSubTypes```、```com.fasterxml.jackson.annotation.JsonTypeInfo```、```org.springframework.format.annotation.DateTimeFormat```、```org.springframework.web.bind.annotation.RequestParam```、```lombok.Builder.Default```。
+插件通过对一些第三方框架解析来生成参数描述信息，具体支持的参数注解包括：```javax.validation.constraints.Max```、```javax.validation.constraints.Min```、```javax.validation.constraints.Size```、```javax.validation.constraints.Pattern```、```javax.validation.constraints.NotNull```、```javax.validation.constraints.NotEmpty```、```javax.validation.constraints.NotBlank```、```javax.validation.constraints.DecimalMax```、```javax.validation.constraints.DecimalMin```、```com.fasterxml.jackson.annotation.JsonFormat```、```com.fasterxml.jackson.annotation.JsonProperty```、```com.fasterxml.jackson.databind.annotation.JsonNaming```、```com.fasterxml.jackson.annotation.JsonSubTypes```、```com.fasterxml.jackson.annotation.JsonTypeInfo```、```org.springframework.format.annotation.DateTimeFormat```、```org.springframework.web.bind.annotation.RequestParam```、```lombok.Builder.Default```、```com.arsframework.spring.web.utils.param.Rename```。
+
+- 涉及参数命名更新的解析顺序：
+
+1、参数是否已使用```com.arsframework.spring.web.utils.param.Rename```注解；
+
+2、参数是否已使用```com.fasterxml.jackson.annotation.JsonProperty```注解；
+
+3、参数是否已使用```com.fasterxml.jackson.databind.annotation.JsonNaming```注解；
+
+4、插件是否启用驼峰转下划线功能，即```enableSnakeUnderlineConversion```参数设置为```true```；
 
 针对枚举类型参数将解析枚举所有选项值，并将其作为参数描述的以部分；针对递归参数将向下获取一级。
 
@@ -111,3 +124,7 @@
 
 ### v1.1.3
 1. 修复泛型类型解析失败问题；
+
+### v1.2.0
+1. 新增插件参数```enableSnakeUnderlineConversion```，用于控制是否将参数格式由驼峰转为下划线；
+2. 新增针对```com.fasterxml.jackson.databind.annotation.JsonNaming```、```com.arsframework.spring.web.utils.param.Rename```注解的参数解析支持；

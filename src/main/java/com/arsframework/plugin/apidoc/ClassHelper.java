@@ -56,7 +56,7 @@ public final class ClassHelper {
      */
     public static boolean isBasicClass(Class<?> clazz) {
         try {
-            return clazz == null ? false : ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
+            return clazz != null && ((Class<?>) clazz.getField("TYPE").get(null)).isPrimitive();
         } catch (NoSuchFieldException | IllegalAccessException e) {
             return clazz.isPrimitive() || clazz == Byte.class || clazz == Character.class || clazz == Integer.class
                     || clazz == Short.class || clazz == Long.class || clazz == Float.class || clazz == Double.class

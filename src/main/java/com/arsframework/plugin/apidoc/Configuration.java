@@ -41,6 +41,11 @@ public class Configuration {
     private boolean enableResponseExample;
 
     /**
+     * Whether the snake and underline conversion is enabled
+     */
+    private boolean enableSnakeUnderlineConversion;
+
+    /**
      * Include group identities
      */
     @Builder.Default

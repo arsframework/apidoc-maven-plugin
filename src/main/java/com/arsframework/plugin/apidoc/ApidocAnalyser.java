@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.RootDoc;
 import com.sun.tools.javadoc.Main;
-import org.springframework.web.bind.annotation.SessionAttribute;
 
 /**
  * Apidoc analyser
@@ -337,25 +335,6 @@ public class ApidocAnalyser {
     }
 
     /**
-     * Judge whether the parameter is be used for request
-     *
-     * @param parameter Parameter object
-     * @param type      Parameter type
-     * @return true/false
-     */
-    private boolean isRequestParameter(java.lang.reflect.Parameter parameter, Class<?> type) {
-        if (parameter == null || type == null || parameter.isAnnotationPresent(SessionAttribute.class)) {
-            return false;
-        } else if (ClassHelper.isMetaClass(type)) {
-            return true;
-        }
-        Package pkg = type.getPackage();
-        Set<String> includeGroupIdentities = this.configuration.getIncludeGroupIdentities();
-        return pkg != null && includeGroupIdentities != null && !includeGroupIdentities.isEmpty()
-                && includeGroupIdentities.stream().anyMatch(pkg.getName()::startsWith);
-    }
-
-    /**
      * Api document analysis executing
      *
      * @param output Api document file
@@ -368,8 +347,8 @@ public class ApidocAnalyser {
 
         // Build apis
         List<Api> apis = this.sources.keySet().stream().filter(ApidocHelper::isApiClass).flatMap(clazz ->
-                Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod).map(method ->
-                        MethodApiParser.parse(method, this::getDocument, this::isRequestParameter))
+                Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod)
+                        .map(method -> MethodApiParser.parse(method, this::getDocument, this.configuration))
         ).collect(Collectors.toList());
         if (apis.isEmpty()) {
             this.configuration.getLog().info("There is no API for building document");
