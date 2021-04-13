@@ -5,7 +5,6 @@ import java.util.Set;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.maven.plugin.logging.Log;
 
 /**
  * Api document configuration
@@ -15,11 +14,6 @@ import org.apache.maven.plugin.logging.Log;
 @Getter
 @Builder
 public class Configuration {
-    /**
-     * Plugin log
-     */
-    private Log log;
-
     /**
      * Whether the date is displayed
      */

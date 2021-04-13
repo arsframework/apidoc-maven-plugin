@@ -48,11 +48,6 @@ public class Api {
     private String header;
 
     /**
-     * Api author
-     */
-    private String author;
-
-    /**
      * Api version
      */
     private String version;
@@ -66,6 +61,11 @@ public class Api {
      * Whether the deprecated is enabled
      */
     private boolean deprecated;
+
+    /**
+     * Api authors
+     */
+    private List<String> authors;
 
     /**
      * Api request methods

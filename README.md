@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 </plugin>
 ```
 
@@ -128,3 +128,9 @@
 ### v1.2.0
 1. 新增插件参数```enableSnakeUnderlineConversion```，用于控制是否将参数格式由驼峰转为下划线；
 2. 新增针对```com.fasterxml.jackson.databind.annotation.JsonNaming```、```com.arsframework.spring.web.utils.param.Rename```注解的参数解析支持；
+
+### v1.2.1
+1. 调整```@author```注释的解析，支持多个作者的提取；
+2. 在处理```@version```注解时，同时兼容```@since```注解的解析；
+3. 将参数```enableSampleRequest```的默认值调整为```true```;
+4. 优化代码逻辑；

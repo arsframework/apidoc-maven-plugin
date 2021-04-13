@@ -13,9 +13,13 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.sun.javadoc.ClassDoc;
 import com.sun.javadoc.Doc;
+import com.sun.javadoc.FieldDoc;
+import com.sun.javadoc.MethodDoc;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,6 +52,11 @@ public final class ApidocHelper {
      * Author definition name
      */
     private static final String AUTHOR_DEFINITION_NAME = "@author";
+
+    /**
+     * Version definition name
+     */
+    private static final String SINCE_DEFINITION_NAME = "@since";
 
     /**
      * Version definition name
@@ -303,6 +312,44 @@ public final class ApidocHelper {
     }
 
     /**
+     * Get field document
+     *
+     * @param document Class document object
+     * @param field    Field object
+     * @return Field document object
+     */
+    public static FieldDoc getDocument(ClassDoc document, Field field) {
+        Objects.requireNonNull(field, "field not specified");
+        if (document != null) {
+            for (FieldDoc fieldDocument : document.fields(false)) {
+                if (fieldDocument.name().equals(field.getName())) {
+                    return fieldDocument;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get document of method
+     *
+     * @param document Class document object
+     * @param method   Method object
+     * @return Method document object
+     */
+    public static MethodDoc getDocument(ClassDoc document, Method method) {
+        Objects.requireNonNull(method, "method not specified");
+        if (document != null) {
+            for (MethodDoc methodDocument : document.methods(false)) {
+                if (methodDocument.name().equals(method.getName())) {
+                    return methodDocument;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Get comment lines
      *
      * @param document Document object
@@ -352,7 +399,20 @@ public final class ApidocHelper {
      * @return Annotation note
      */
     private static String getAnnotationNote(String name, Doc... documents) {
+        return getAnnotationNote(name, note -> false, documents);
+    }
+
+    /**
+     * Get annotation note
+     *
+     * @param name      Annotation name
+     * @param iterable  The function of note is iterable
+     * @param documents Document object array
+     * @return Annotation note
+     */
+    private static String getAnnotationNote(String name, Function<String, Boolean> iterable, Doc... documents) {
         Objects.requireNonNull(name, "name not specified");
+        Objects.requireNonNull(iterable, "iterable not specified");
         if (documents == null || documents.length == 0) {
             return null;
         }
@@ -363,7 +423,7 @@ public final class ApidocHelper {
             }
             for (String line : document.getRawCommentText().trim().split(ENTER_DEFINITION_NAME)) {
                 if (!(line = line.trim()).isEmpty() && line.startsWith(name)
-                        && !(note = line.substring(name.length()).trim()).isEmpty()) {
+                        && !(note = line.substring(name.length()).trim()).isEmpty() && !iterable.apply(note)) {
                     return note;
                 }
             }
@@ -382,13 +442,38 @@ public final class ApidocHelper {
     }
 
     /**
-     * Get author note from document
+     * Get authors note from document
      *
      * @param documents Document object array
-     * @return Api author
+     * @return Api authors
      */
-    public static String getAuthorNote(Doc... documents) {
-        return getAnnotationNote(AUTHOR_DEFINITION_NAME, documents);
+    public static List<String> getAuthorNotes(Doc... documents) {
+        List<String> authors = new LinkedList<>();
+        if (documents != null && documents.length > 0) {
+            for (Doc document : documents) {
+                if (document == null) {
+                    continue;
+                }
+                getAnnotationNote(AUTHOR_DEFINITION_NAME, author -> {
+                    authors.add(author);
+                    return true;
+                }, document);
+                if (!authors.isEmpty()) {
+                    break;
+                }
+            }
+        }
+        return authors;
+    }
+
+    /**
+     * Get since note from document
+     *
+     * @param documents Document object array
+     * @return Api since
+     */
+    public static String getSinceNote(Doc... documents) {
+        return getAnnotationNote(SINCE_DEFINITION_NAME, documents);
     }
 
     /**
@@ -398,7 +483,8 @@ public final class ApidocHelper {
      * @return Api version
      */
     public static String getVersionNote(Doc... documents) {
-        return getAnnotationNote(VERSION_DEFINITION_NAME, documents);
+        String version = getAnnotationNote(VERSION_DEFINITION_NAME, documents);
+        return version == null ? getSinceNote(documents) : version;
     }
 
     /**

@@ -55,27 +55,27 @@ import org.springframework.web.bind.annotation.ValueConstants;
 import org.springframework.web.multipart.MultipartFile;
 
 /**
- * Method api parser
+ * Parameter analyser
  *
  * @author Woody
  */
-public class MethodApiParser {
+public class ParameterAnalyser {
     /**
      * Api method object
      */
-    private final Method method;
+    protected final Method method;
 
     /**
      * Class document information function
      */
-    private final Function<Class<?>, ClassDoc> information;
+    protected final Function<Class<?>, ClassDoc> information;
 
     /**
      * Api document configuration
      */
-    private final Configuration configuration;
+    protected final Configuration configuration;
 
-    private MethodApiParser(Method method, Function<Class<?>, ClassDoc> information, Configuration configuration) {
+    public ParameterAnalyser(Method method, Function<Class<?>, ClassDoc> information, Configuration configuration) {
         Objects.requireNonNull(method, "method not specified");
         Objects.requireNonNull(information, "information not specified");
         Objects.requireNonNull(configuration, "configuration not specified");
@@ -104,61 +104,66 @@ public class MethodApiParser {
     }
 
     /**
-     * Iteration the active class field
+     * Get class document
      *
-     * @param clazz    Class object
-     * @param consumer Field consumer
+     * @param clazz Class object
+     * @return Class document
      */
-    private static void iterationActiveClassField(Class<?> clazz, Consumer<Field> consumer) {
+    protected ClassDoc getDocument(Class<?> clazz) {
         Objects.requireNonNull(clazz, "clazz not specified");
-        Objects.requireNonNull(consumer, "consumer not specified");
-        for (Field field : clazz.getDeclaredFields()) {
-            if (!field.isSynthetic() && !Modifier.isStatic(field.getModifiers())
-                    && !field.isAnnotationPresent(JsonIgnore.class)) {
-                consumer.accept(field);
-            }
-        }
+        return this.information.apply(clazz);
     }
 
     /**
-     * Get parameters with class fields
+     * Get field document
      *
-     * @param clazz    Class object
-     * @param consumer Field consumer
-     * @return Parameter list
+     * @param field Field object
+     * @return Field document
      */
-    private static List<Parameter> class2parameters(Class<?> clazz, Function<Field, Parameter> consumer) {
-        Objects.requireNonNull(clazz, "clazz not specified");
-        Objects.requireNonNull(consumer, "consumer not specified");
-        Class<?> original = clazz;
-        List<Parameter> parameters = new LinkedList<>();
-
-        // Load current and parent class fields
-        do {
-            iterationActiveClassField(clazz, field -> parameters.add(consumer.apply(field)));
-        } while ((clazz = clazz.getSuperclass()) != null && !ClassHelper.isMetaClass(clazz)
-                && !Collection.class.isAssignableFrom(clazz));
-
-        // Load subclass field by @JsonTypeInfo
-        JsonTypeInfo jsonType = original.getAnnotation(JsonTypeInfo.class);
-        if (jsonType != null && jsonType.use() == JsonTypeInfo.Id.NAME && !jsonType.property().isEmpty()) {
-            for (JsonSubTypes.Type type : original.getAnnotation(JsonSubTypes.class).value()) {
-                iterationActiveClassField(type.value(), field -> parameters.add(consumer.apply(field)));
-            }
-        }
-        return parameters;
+    protected FieldDoc getDocument(Field field) {
+        Objects.requireNonNull(field, "field not specified");
+        return ApidocHelper.getDocument(this.getDocument(field.getDeclaringClass()), field);
     }
 
     /**
-     * Parse the method to api
+     * Get document of method
      *
-     * @param method        Method object
-     * @param information   Class document information function
-     * @param configuration Api document configuration
-     * @return Api object
+     * @param method Method object
+     * @return Method document object
      */
-    public static Api parse(Method method, Function<Class<?>, ClassDoc> information, Configuration configuration) {
-        return new MethodApiParser(method, information, configuration).execute();
+    protected MethodDoc getDocument(Method method) {
+        Objects.requireNonNull(method, "method not specified");
+        return ApidocHelper.getDocument(this.getDocument(method.getDeclaringClass()), method);
+    }
+
+    /**
+     * Judge whether the field is active parameter
+     *
+     * @param field Field object
+     * @return true/false
+     */
+    protected boolean isActiveParameter(Field field) {
+        return field != null && !field.isSynthetic() && !Modifier.isStatic(field.getModifiers())
+                && !field.isAnnotationPresent(JsonIgnore.class);
+    }
+
+    /**
+     * Judge whether the parameter is be used for request
+     *
+     * @param parameter Parameter object
+     * @param type      Parameter type
+     * @return true/false
+     */
+    protected boolean isRequestParameter(java.lang.reflect.Parameter parameter, Class<?> type) {
+        if (parameter == null || type == null || parameter.isAnnotationPresent(SessionAttribute.class)) {
+            return false;
+        } else if (ClassHelper.isMetaClass(type)) {
+            return true;
+        }
+        Package pkg = type.getPackage();
+        Set<String> includeGroupIdentities = this.configuration.getIncludeGroupIdentities();
+        return pkg != null && includeGroupIdentities != null && !includeGroupIdentities.isEmpty()
+                && includeGroupIdentities.stream().anyMatch(pkg.getName()::startsWith);
     }
 
     /**
@@ -167,7 +172,7 @@ public class MethodApiParser {
      * @param clazz Class object
      * @return Parameter type class
      */
-    private Class<?> getType(Class<?> clazz) {
+    protected Class<?> getType(Class<?> clazz) {
         Objects.requireNonNull(clazz, "clazz not specified");
         if (clazz == byte.class || clazz == Byte.class) {
             return Byte.class;
@@ -202,40 +207,6 @@ public class MethodApiParser {
     }
 
     /**
-     * Judge whether the element is required
-     *
-     * @param element Annotated element
-     * @return true/false
-     */
-    private boolean isRequired(AnnotatedElement element) {
-        return element != null && (element.isAnnotationPresent(NotNull.class)
-                || element.isAnnotationPresent(NotBlank.class) || element.isAnnotationPresent(NotEmpty.class)
-                || (element.isAnnotationPresent(Size.class) && element.getAnnotation(Size.class).min() > 0));
-    }
-
-    /**
-     * Judge whether the parameter is required
-     *
-     * @param parameter Parameter object
-     * @return true/false
-     */
-    private boolean isRequired(java.lang.reflect.Parameter parameter) {
-        RequestParam annotation;
-        return parameter != null && (this.isRequired((AnnotatedElement) parameter) ||
-                ((annotation = parameter.getAnnotation(RequestParam.class)) != null && annotation.required()));
-    }
-
-    /**
-     * Judge whether the element is deprecated
-     *
-     * @param element Annotated element
-     * @return true/false
-     */
-    private boolean isDeprecated(AnnotatedElement element) {
-        return element != null && element.isAnnotationPresent(Deprecated.class);
-    }
-
-    /**
      * Get field naming strategy
      *
      * @param field Filed object
@@ -267,7 +238,7 @@ public class MethodApiParser {
      * @param field Field object
      * @return Field name
      */
-    private String getName(Field field) {
+    protected String getName(Field field) {
         Objects.requireNonNull(field, "field not specified");
 
         // Form parameter conversion
@@ -298,7 +269,7 @@ public class MethodApiParser {
      * @param parameter Parameter object
      * @return Parameter name
      */
-    private String getName(java.lang.reflect.Parameter parameter) {
+    protected String getName(java.lang.reflect.Parameter parameter) {
         Objects.requireNonNull(parameter, "parameter not specified");
         RequestParam annotation = parameter.getAnnotation(RequestParam.class);
         String name = annotation == null ? null :
@@ -312,7 +283,7 @@ public class MethodApiParser {
      * @param element Annotated element
      * @return Parameter size object
      */
-    private Parameter.Size getSize(AnnotatedElement element) {
+    protected Parameter.Size getSize(AnnotatedElement element) {
         Objects.requireNonNull(element, "element not specified");
         Size size = element.getAnnotation(Size.class);
         if (size != null) {
@@ -348,7 +319,7 @@ public class MethodApiParser {
      * @param element Annotated element
      * @return Parameter format
      */
-    private String getFormat(AnnotatedElement element) {
+    protected String getFormat(AnnotatedElement element) {
         Objects.requireNonNull(element, "element not specified");
         String format;
         Annotation annotation;
@@ -368,12 +339,45 @@ public class MethodApiParser {
     }
 
     /**
+     * Judge whether the element is required
+     *
+     * @param element Annotated element
+     * @return true/false
+     */
+    protected boolean isRequired(AnnotatedElement element) {
+        return element != null && (element.isAnnotationPresent(NotNull.class)
+                || element.isAnnotationPresent(NotBlank.class) || element.isAnnotationPresent(NotEmpty.class)
+                || (element.isAnnotationPresent(Size.class) && element.getAnnotation(Size.class).min() > 0));
+    }
+
+    /**
+     * Judge whether the element is deprecated
+     *
+     * @param element Annotated element
+     * @return true/false
+     */
+    protected boolean isDeprecated(AnnotatedElement element) {
+        return element != null && element.isAnnotationPresent(Deprecated.class);
+    }
+
+    /**
+     * Get parameter example
+     *
+     * @param field Field object
+     * @return Example value
+     */
+    protected String getExample(Field field) {
+        Objects.requireNonNull(field, "field not specified");
+        return ApidocHelper.getExampleNote(this.getDocument(field));
+    }
+
+    /**
      * Get parameter default value
      *
      * @param field Field object
      * @return Parameter default value
      */
-    private Object getDefaultValue(Field field) {
+    protected Object getDefaultValue(Field field) {
         Objects.requireNonNull(field, "field not specified");
         try {
             Object instance = null;
@@ -419,7 +423,7 @@ public class MethodApiParser {
      * @param parameter Parameter object
      * @return Parameter default value
      */
-    private Object getDefaultValue(java.lang.reflect.Parameter parameter) {
+    protected Object getDefaultValue(java.lang.reflect.Parameter parameter) {
         Objects.requireNonNull(parameter, "parameter not specified");
         String defaultValue;
         RequestParam annotation = parameter.getAnnotation(RequestParam.class);
@@ -431,61 +435,13 @@ public class MethodApiParser {
     }
 
     /**
-     * Get class document
-     *
-     * @param clazz Class object
-     * @return Class document
-     */
-    private ClassDoc getDocument(Class<?> clazz) {
-        Objects.requireNonNull(clazz, "clazz not specified");
-        return this.information.apply(clazz);
-    }
-
-    /**
-     * Get field document
-     *
-     * @param field Field object
-     * @return Field document
-     */
-    private FieldDoc getDocument(Field field) {
-        Objects.requireNonNull(field, "field not specified");
-        ClassDoc classDocument = this.getDocument(field.getDeclaringClass());
-        if (classDocument != null) {
-            for (FieldDoc fieldDocument : classDocument.fields(false)) {
-                if (fieldDocument.name().equals(field.getName())) {
-                    return fieldDocument;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Get document of method
-     *
-     * @param method Method object
-     * @return Method document object
-     */
-    private MethodDoc getDocument(Method method) {
-        Objects.requireNonNull(method, "method not specified");
-        ClassDoc classDocument = this.getDocument(method.getDeclaringClass());
-        if (classDocument != null) {
-            for (MethodDoc methodDocument : classDocument.methods(false)) {
-                if (methodDocument.name().equals(method.getName())) {
-                    return methodDocument;
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
      * Get field description
      *
      * @param field Field object
      * @return Field description
      */
-    private String getDescription(Field field) {
+    protected String getDescription(Field field) {
+        Objects.requireNonNull(field, "field not specified");
         FieldDoc document = this.getDocument(field);
         String comment = document == null ? null : document.commentText();
         return comment == null || (comment = comment.trim()).isEmpty() ? null : comment;
@@ -497,9 +453,9 @@ public class MethodApiParser {
      * @param parameter Parameter object
      * @return Parameter description
      */
-    private String getDescription(java.lang.reflect.Parameter parameter) {
-        MethodDoc document = this.getDocument(this.method);
-        return ApidocHelper.getParameterNote(parameter.getName(), document);
+    protected String getDescription(java.lang.reflect.Parameter parameter) {
+        Objects.requireNonNull(parameter, "parameter not specified");
+        return ApidocHelper.getParameterNote(parameter.getName(), this.getDocument(this.method));
     }
 
     /**
@@ -508,7 +464,7 @@ public class MethodApiParser {
      * @param clazz Class object
      * @return Parameter option list
      */
-    private List<Parameter.Option> getOptions(Class<?> clazz) {
+    protected List<Parameter.Option> getOptions(Class<?> clazz) {
         Objects.requireNonNull(clazz, "clazz not specified");
         List<Parameter.Option> options = new LinkedList<>();
         if (Enum.class.isAssignableFrom(clazz)) {
@@ -524,22 +480,48 @@ public class MethodApiParser {
     }
 
     /**
-     * Judge whether the parameter is be used for request
+     * The parameter iteration of class
      *
-     * @param parameter Parameter object
-     * @param type      Parameter type
-     * @return true/false
+     * @param clazz    Class object
+     * @param consumer Field consumer
      */
-    private boolean isRequestParameter(java.lang.reflect.Parameter parameter, Class<?> type) {
-        if (parameter == null || type == null || parameter.isAnnotationPresent(SessionAttribute.class)) {
-            return false;
-        } else if (ClassHelper.isMetaClass(type)) {
-            return true;
+    private void classParameterIterating(Class<?> clazz, Consumer<Field> consumer) {
+        Objects.requireNonNull(clazz, "clazz not specified");
+        Objects.requireNonNull(consumer, "consumer not specified");
+        for (Field field : clazz.getDeclaredFields()) {
+            if (this.isActiveParameter(field)) {
+                consumer.accept(field);
+            }
         }
-        Package pkg = type.getPackage();
-        Set<String> includeGroupIdentities = this.configuration.getIncludeGroupIdentities();
-        return pkg != null && includeGroupIdentities != null && !includeGroupIdentities.isEmpty()
-                && includeGroupIdentities.stream().anyMatch(pkg.getName()::startsWith);
+    }
+
+    /**
+     * Get parameters with class fields
+     *
+     * @param clazz    Class object
+     * @param consumer Field consumer
+     * @return Parameter list
+     */
+    private List<Parameter> class2parameters(Class<?> clazz, Function<Field, Parameter> consumer) {
+        Objects.requireNonNull(clazz, "clazz not specified");
+        Objects.requireNonNull(consumer, "consumer not specified");
+        Class<?> original = clazz;
+        List<Parameter> parameters = new LinkedList<>();
+
+        // Load current and parent class fields
+        do {
+            this.classParameterIterating(clazz, field -> parameters.add(consumer.apply(field)));
+        } while ((clazz = clazz.getSuperclass()) != null && !ClassHelper.isMetaClass(clazz)
+                && !Collection.class.isAssignableFrom(clazz));
+
+        // Load subclass field by @JsonTypeInfo
+        JsonTypeInfo jsonType = original.getAnnotation(JsonTypeInfo.class);
+        if (jsonType != null && jsonType.use() == JsonTypeInfo.Id.NAME && !jsonType.property().isEmpty()) {
+            for (JsonSubTypes.Type type : original.getAnnotation(JsonSubTypes.class).value()) {
+                this.classParameterIterating(type.value(), field -> parameters.add(consumer.apply(field)));
+            }
+        }
+        return parameters;
     }
 
     /**
@@ -562,17 +544,16 @@ public class MethodApiParser {
         } else if (Collection.class.isAssignableFrom(clazz)) {
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
-        String example = ApidocHelper.getExampleNote(this.getDocument(field));
         boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
         Parameter parameter = Parameter.builder().type(this.getType(target)).original(target).name(this.getName(field))
                 .size(this.getSize(field)).format(this.getFormat(field)).required(this.isRequired(field))
-                .multiple(multiple).example(example).deprecated(this.isDeprecated(field))
+                .multiple(multiple).example(this.getExample(field)).deprecated(this.isDeprecated(field))
                 .defaultValue(this.getDefaultValue(field)).description(this.getDescription(field))
                 .options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target) && !isRecursion(stack, target)) {
             stack.addLast(target);
             Map<TypeVariable<?>, Type> finalVariables = ClassHelper.getVariableParameterizedMappings(type);
-            parameter.setFields(class2parameters(target, f -> this.field2parameter(f, finalVariables, stack)));
+            parameter.setFields(this.class2parameters(target, f -> this.field2parameter(f, finalVariables, stack)));
             stack.removeLast();
         }
         return parameter;
@@ -583,7 +564,7 @@ public class MethodApiParser {
      *
      * @return Parameter list
      */
-    private List<Parameter> getParameters() {
+    public List<Parameter> getParameters() {
         List<Parameter> parameters = new LinkedList<>();
         for (java.lang.reflect.Parameter parameter : this.method.getParameters()) {
             Type type = parameter.getParameterizedType();
@@ -607,7 +588,7 @@ public class MethodApiParser {
             } else {
                 LinkedList<Class<?>> stack = new LinkedList<>();
                 Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
-                parameters.addAll(class2parameters(target, f -> this.field2parameter(f, variables, stack)));
+                parameters.addAll(this.class2parameters(target, f -> this.field2parameter(f, variables, stack)));
             }
         }
         return parameters;
@@ -618,7 +599,7 @@ public class MethodApiParser {
      *
      * @return Parameter object
      */
-    private Parameter getReturned() {
+    public Parameter getReturned() {
         Type type = this.method.getGenericReturnType();
         if (type == void.class) {
             return null;
@@ -630,45 +611,18 @@ public class MethodApiParser {
             Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
             target = ClassHelper.type2class(type = ClassHelper.getCollectionActualType(type, variables));
         }
-        String example = ApidocHelper.getExampleNote(this.getDocument(this.method));
+        MethodDoc document = this.getDocument(this.method);
+        String example = ApidocHelper.getExampleNote(document);
+        String description = ApidocHelper.getReturnNote(document);
         boolean multiple = clazz.isArray() || Collection.class.isAssignableFrom(clazz);
-        Parameter parameter =
-                Parameter.builder().type(this.getType(target)).original(target).multiple(multiple).name("/")
-                        .example(example).description(ApidocHelper.getReturnNote(this.getDocument(this.method)))
-                        .options(this.getOptions(target)).build();
+        Parameter parameter = Parameter.builder().type(this.getType(target)).original(target).multiple(multiple)
+                .name("/").example(example).description(description).options(this.getOptions(target)).build();
         if (!ClassHelper.isMetaClass(target)) {
             LinkedList<Class<?>> stack = new LinkedList<>();
             stack.addLast(target);
             Map<TypeVariable<?>, Type> variables = ClassHelper.getVariableParameterizedMappings(type);
-            parameter.setFields(class2parameters(target, f -> this.field2parameter(f, variables, stack)));
+            parameter.setFields(this.class2parameters(target, f -> this.field2parameter(f, variables, stack)));
         }
         return parameter;
-    }
-
-    /**
-     * Execution api analysis
-     *
-     * @return Api object
-     */
-    private Api execute() {
-        Class<?> clazz = this.method.getDeclaringClass();
-        ClassDoc classDocument = this.getDocument(clazz);
-        MethodDoc methodDocument = this.getDocument(this.method);
-        String group = ApidocHelper.getCommentOutline(classDocument);
-        String name = ApidocHelper.getCommentOutline(methodDocument);
-        return Api.builder()
-                .key(ApidocHelper.getApiKey(this.method))
-                .url(ApidocHelper.getApiUrl(this.method))
-                .name(name == null ? this.method.getName() : name)
-                .group(group == null ? clazz.getSimpleName() : group)
-                .header(ApidocHelper.getApiHeader(this.method))
-                .description(ApidocHelper.getCommentDescription(methodDocument))
-                .deprecated(ApidocHelper.isApiDeprecated(this.method))
-                .methods(ApidocHelper.getApiMethods(this.method))
-                .date(ApidocHelper.getDateNote(methodDocument, classDocument))
-                .author(ApidocHelper.getAuthorNote(methodDocument, classDocument))
-                .version(ApidocHelper.getVersionNote(methodDocument, classDocument))
-                .parameters(this.getParameters()).returned(this.getReturned())
-                .build();
     }
 }

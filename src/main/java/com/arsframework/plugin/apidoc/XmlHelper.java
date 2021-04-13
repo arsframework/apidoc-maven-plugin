@@ -7,12 +7,12 @@ import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 /**
- * The maven configuration helper
+ * Xml helper
  *
  * @author Woody
  */
-public final class ConfigurationHelper {
-    private ConfigurationHelper() {
+public final class XmlHelper {
+    private XmlHelper() {
     }
 
     /**
@@ -96,17 +96,6 @@ public final class ConfigurationHelper {
     public static Element element(String name, String value, List<Element> children,
                                   List<Attribute> attributes) {
         return new Element(name, value, children, attributes);
-    }
-
-    /**
-     * Constructs the attribute
-     *
-     * @param name  The attribute name
-     * @param value The attribute value
-     * @return The Attribute object
-     */
-    public static Attribute attribute(String name, String value) {
-        return new Attribute(name, value);
     }
 
     /**

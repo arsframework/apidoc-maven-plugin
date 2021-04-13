@@ -43,9 +43,9 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomUtils;
 
-import static com.arsframework.plugin.apidoc.ConfigurationHelper.configuration;
-import static com.arsframework.plugin.apidoc.ConfigurationHelper.element;
-import static com.arsframework.plugin.apidoc.ConfigurationHelper.toXpp3Dom;
+import static com.arsframework.plugin.apidoc.XmlHelper.configuration;
+import static com.arsframework.plugin.apidoc.XmlHelper.element;
+import static com.arsframework.plugin.apidoc.XmlHelper.toXpp3Dom;
 
 /**
  * Api document builder
@@ -92,7 +92,7 @@ public class ApidocBuildMojo extends AbstractMojo {
     /**
      * Whether the sample request is enabled
      */
-    @Parameter(defaultValue = "false", required = true)
+    @Parameter(defaultValue = "true", required = true)
     private boolean enableSampleRequest;
 
     /**
@@ -108,13 +108,15 @@ public class ApidocBuildMojo extends AbstractMojo {
     private boolean enableSnakeUnderlineConversion;
 
     /**
-     * Get include group identities
+     * Get include group identities for distinct
      *
      * @return Group identity set
      */
-    private Set<String> getIncludeGroupIdentities() {
-        return Stream.of(this.includeGroupIdentities.split("[, ]"))
+    private Set<String> getDistinctGroupIdentities() {
+        Set<String> groups = Stream.of(this.includeGroupIdentities.split("[, ]"))
                 .filter(group -> group != null && !group.isEmpty()).collect(Collectors.toSet());
+        groups.add(this.project.getGroupId());
+        return groups;
     }
 
     /**
@@ -153,7 +155,7 @@ public class ApidocBuildMojo extends AbstractMojo {
             Xpp3Dom configuration = Xpp3DomUtils.mergeXpp3Dom(configuration(
                     element("classifier", "sources"),
                     element("includeScope", "compile"),
-                    element("includeGroupIds", String.join(",", this.getIncludeGroupIdentities())),
+                    element("includeGroupIds", String.join(",", this.getDistinctGroupIdentities())),
                     element("failOnMissingClassifierArtifact", "false"),
                     element("outputDirectory", this.dependencySourceDirectory)
             ), toXpp3Dom(descriptor.getMojoConfiguration()));
@@ -179,16 +181,17 @@ public class ApidocBuildMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException {
+        this.getLog().info("Building apidoc: " + this.output);
         try {
             this.unpackDependencies();
             this.unpackProjectSources();
             URLClassLoader classLoader = this.initializeClassLoader();
-            Configuration configuration = Configuration.builder().log(this.getLog()).displayDate(this.displayDate)
+            Configuration configuration = Configuration.builder().displayDate(this.displayDate)
                     .displayAuthor(this.displayAuthor).enableSampleRequest(this.enableSampleRequest)
                     .enableResponseExample(this.enableResponseExample)
                     .enableSnakeUnderlineConversion(this.enableSnakeUnderlineConversion)
-                    .includeGroupIdentities(this.getIncludeGroupIdentities()).build();
-            ApidocAnalyser.parse(classLoader, this.dependencySourceDirectory, configuration, this.output);
+                    .includeGroupIdentities(this.getDistinctGroupIdentities()).build();
+            new ApidocExecutor(classLoader, this.dependencySourceDirectory, configuration).execute(this.output);
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
         } finally {

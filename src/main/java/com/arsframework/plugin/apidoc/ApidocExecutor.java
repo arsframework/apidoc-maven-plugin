@@ -28,11 +28,11 @@ import com.sun.javadoc.RootDoc;
 import com.sun.tools.javadoc.Main;
 
 /**
- * Apidoc analyser
+ * Apidoc executor
  *
  * @author Woody
  */
-public class ApidocAnalyser {
+public class ApidocExecutor {
     /**
      * Source file suffix
      */
@@ -83,7 +83,7 @@ public class ApidocAnalyser {
      */
     private final Map<String, ClassDoc> documents = new HashMap<>();
 
-    private ApidocAnalyser(URLClassLoader classLoader, String sourceDirectory, Configuration configuration) {
+    public ApidocExecutor(URLClassLoader classLoader, String sourceDirectory, Configuration configuration) {
         Objects.requireNonNull(classLoader, "classLoader not specified");
         Objects.requireNonNull(sourceDirectory, "sourceDirectory not specified");
         Objects.requireNonNull(configuration, "configuration not specified");
@@ -192,21 +192,6 @@ public class ApidocAnalyser {
     }
 
     /**
-     * Parse api document
-     *
-     * @param classLoader     Class loader object
-     * @param sourceDirectory Source directory
-     * @param configuration   Api document configuration
-     * @param output          Api document file
-     * @throws IOException            IO exception
-     * @throws ClassNotFoundException Class not found exception
-     */
-    public static void parse(URLClassLoader classLoader, String sourceDirectory,
-                             Configuration configuration, String output) throws IOException, ClassNotFoundException {
-        new ApidocAnalyser(classLoader, sourceDirectory, configuration).execute(output);
-    }
-
-    /**
      * Get document of class
      *
      * @param clazz Class object
@@ -301,8 +286,8 @@ public class ApidocAnalyser {
         if (api.getDescription() != null) {
             description.append(api.getDescription().replace("\n", "\n *\n *"));
         }
-        if (api.getAuthor() != null && this.configuration.isDisplayAuthor()) {
-            description.append("\n *\n * Author: ").append(api.getAuthor());
+        if (api.getAuthors() != null && !api.getAuthors().isEmpty() && this.configuration.isDisplayAuthor()) {
+            description.append("\n *\n * Author: ").append(String.join(", ", api.getAuthors()));
         }
         if (api.getDate() != null && this.configuration.isDisplayDate()) {
             description.append("\n *\n * Date: ").append(api.getDate());
@@ -341,17 +326,17 @@ public class ApidocAnalyser {
      * @throws IOException            IO exception
      * @throws ClassNotFoundException Class not found exception
      */
-    private void execute(String output) throws IOException, ClassNotFoundException {
+    public void execute(String output)
+            throws IOException, ClassNotFoundException {
         Objects.requireNonNull(output, "output not specified");
         this.initializeClasses(new File(this.sourceDirectory));
 
         // Build apis
         List<Api> apis = this.sources.keySet().stream().filter(ApidocHelper::isApiClass).flatMap(clazz ->
                 Stream.of(clazz.getDeclaredMethods()).filter(ApidocHelper::isApiMethod)
-                        .map(method -> MethodApiParser.parse(method, this::getDocument, this.configuration))
+                        .map(method -> new MethodAnalyser(method, this::getDocument, this.configuration).parse())
         ).collect(Collectors.toList());
         if (apis.isEmpty()) {
-            this.configuration.getLog().info("There is no API for building document");
             return;
         }
 
@@ -378,7 +363,6 @@ public class ApidocAnalyser {
                 writer.write(this.api2document(api));
             }
         }
-        this.configuration.getLog().info(String.format("API document built successfully (%s)", output));
     }
 
     /**
