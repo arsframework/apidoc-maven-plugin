@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.2.1</version>
+    <version>1.3.0</version>
 </plugin>
 ```
 
@@ -51,6 +51,11 @@
 
 #### 3.1.7 ```enableSnakeUnderlineConversion```
 是否启动将参数格式由驼峰转为下划线，默认```false```。如果参数已使用```com.arsframework.spring.web.utils.param.Rename```、```com.fasterxml.jackson.annotation.JsonProperty```、```com.fasterxml.jackson.databind.annotation.JsonNaming```注解，则忽略该参数。
+
+#### 3.1.8 ```analyserFactoryClass```
+设置自定义接口解析对象工厂类，通过该参数可覆盖系统默认处理逻辑。
+
+接口解析对象工厂接口：```com.arsframework.apidoc.core.MethodAnalyser.Factory```
 
 ### 3.2 接口解析
 插件根据```includeGroupIdentities```参数的值将源码下载并解压到指定目录中（默认```${project.build.directory}/sources```），然后根据源码加载对应的Class对象并通过Java反射机制查找符合条件的接口方法，然后通过解析对应的源码文档生成```com.arsframework.plugin.apidoc.Api```对象，最后统一转换成apidoc工具能够识别的接口文档文件。
@@ -134,3 +139,7 @@
 2. 在处理```@version```注解时，同时兼容```@since```注解的解析；
 3. 将参数```enableSampleRequest```的默认值调整为```true```;
 4. 优化代码逻辑；
+
+### v1.3.0
+1. 将文档处理核心逻辑拆分成单独的JAR包，参考：https://github.com/arsframework/apidoc-core;
+2. 新增插件参数```analyserFactoryClass```，可自定义接口处理逻辑；
