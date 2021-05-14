@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.1</version>
+    <version>1.3.2</version>
 </plugin>
 ```
 
@@ -146,3 +146,6 @@
 
 ### v1.3.1
 1. 修复当Java文件内容为空时加载类对象出错问题;
+
+### v1.3.2
+1. 更新类加载错误日志;

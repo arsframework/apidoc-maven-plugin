@@ -167,7 +167,7 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
                 try {
                     this.sources.put(this.loadClass(file), file.getPath());
                 } catch (IOException | ClassNotFoundException e) {
-                    this.getLog().warn("Class load failed: " + e.getMessage());
+                    this.getLog().warn("Class loading failed: " + e.getMessage());
                 }
             }
         }
