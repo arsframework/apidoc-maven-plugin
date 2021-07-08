@@ -322,10 +322,15 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
      */
     private List<Api> getApis(MethodAnalyser.Factory factory) {
         Objects.requireNonNull(factory, "factory not specified");
-        return this.sources.keySet().stream().filter(DocumentHelper::isApiClass).flatMap(clazz ->
-                Stream.of(clazz.getDeclaredMethods()).filter(DocumentHelper::isApiMethod)
-                        .map(method -> factory.build(method).parse())
-        ).collect(Collectors.toList());
+        return this.sources.keySet().stream().filter(DocumentHelper::isApiClass).flatMap(clazz -> {
+            try {
+                return Stream.of(clazz.getDeclaredMethods()).filter(DocumentHelper::isApiMethod)
+                        .map(method -> factory.build(method).parse());
+            } catch (Throwable e) {
+                this.getLog().warn("Api loading failed: " + e.getMessage());
+            }
+            return null;
+        }).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     /**

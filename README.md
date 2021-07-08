@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.2</version>
+    <version>1.3.3</version>
 </plugin>
 ```
 
@@ -149,3 +149,6 @@
 
 ### v1.3.2
 1. 更新类加载错误日志;
+
+### v1.3.3
+1. 修复因出现ClassNoDefException异常而导致运行终止的问题;
