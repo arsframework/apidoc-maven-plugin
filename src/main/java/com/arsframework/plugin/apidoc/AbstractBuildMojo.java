@@ -118,6 +118,9 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
     @Parameter(defaultValue = "false", required = true)
     protected boolean enableSnakeUnderlineConversion;
 
+    @Parameter
+    protected List<String> excludeClasses;
+
     /**
      * Api analyser factory class
      */
@@ -322,7 +325,9 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
      */
     private List<Api> getApis(MethodAnalyser.Factory factory) {
         Objects.requireNonNull(factory, "factory not specified");
-        return this.sources.keySet().stream().filter(DocumentHelper::isApiClass).flatMap(clazz -> {
+        return this.sources.keySet().stream().filter(clazz -> DocumentHelper.isApiClass(clazz)
+                && (this.excludeClasses == null
+                || this.excludeClasses.stream().noneMatch(clazz.getName()::startsWith))).flatMap(clazz -> {
             try {
                 return Stream.of(clazz.getDeclaredMethods()).filter(DocumentHelper::isApiMethod)
                         .map(method -> factory.build(method).parse());

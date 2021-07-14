@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.3</version>
+    <version>1.3.4</version>
 </plugin>
 ```
 
@@ -56,6 +56,9 @@
 设置自定义接口解析对象工厂类，通过该参数可覆盖系统默认处理逻辑。
 
 接口解析对象工厂接口：```com.arsframework.apidoc.core.MethodAnalyser.Factory```
+
+#### 3.1.8 ```excludeClasses```
+可以通过该参数排除不需要解析的接口（包名+类名），多个接口使用","号隔开。
 
 ### 3.2 接口解析
 插件根据```includeGroupIdentities```参数的值将源码下载并解压到指定目录中（默认```${project.build.directory}/sources```），然后根据源码加载对应的Class对象并通过Java反射机制查找符合条件的接口方法，然后通过解析对应的源码文档生成```com.arsframework.plugin.apidoc.Api```对象，最后统一转换成apidoc工具能够识别的接口文档文件。
@@ -152,3 +155,6 @@
 
 ### v1.3.3
 1. 修复因出现ClassNoDefException异常而导致运行终止的问题;
+
+### v1.3.4
+1. 新增excludeClasses配置参数;
