@@ -118,6 +118,15 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
     @Parameter(defaultValue = "false", required = true)
     protected boolean enableSnakeUnderlineConversion;
 
+    /**
+     * Include header names
+     */
+    @Parameter
+    protected List<String> includeHeaders;
+
+    /**
+     * Exclude class names
+     */
     @Parameter
     protected List<String> excludeClasses;
 

@@ -38,6 +38,7 @@ import com.arsframework.apidoc.core.ContextHelper;
 import com.arsframework.apidoc.core.Parameter;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.springframework.util.CollectionUtils;
 
 /**
  * Apidoc build mojo
@@ -157,7 +158,7 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
      * @param api Api object
      * @return Api document string
      */
-    private static String api2document(Api api) {
+    private String api2document(Api api) {
         Objects.requireNonNull(api, "api not specified");
         StringBuilder document = new StringBuilder();
         Configuration configuration = ContextHelper.getConfiguration();
@@ -170,6 +171,9 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
         document.append("\n * @apiName ").append(api.getKey());
         document.append("\n * @apiGroup ").append(api.getGroup());
         document.append("\n * @apiHeader ").append(api.getHeader());
+        if (!CollectionUtils.isEmpty(this.includeHeaders)) {
+            this.includeHeaders.forEach(header -> document.append("\n * @apiHeader ").append(header));
+        }
         if (api.getVersion() != null) {
             document.append("\n * @apiVersion ").append(api.getVersion());
         }
@@ -237,7 +241,7 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
 
             // Build api document
             for (Api api : apis) {
-                writer.write(api2document(api));
+                writer.write(this.api2document(api));
             }
         }
     }
