@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.5</version>
+    <version>1.3.6</version>
 </plugin>
 ```
 
@@ -164,3 +164,6 @@
 
 ### v1.3.5
 1. 新增includeHeaders配置参数;
+
+### v1.3.6
+1. 更新```apidoc-core```依赖版本;
