@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.7</version>
+    <version>1.3.8</version>
 </plugin>
 ```
 
@@ -170,3 +170,6 @@
 
 ### v1.3.7
 1. 更新```apidoc-core```依赖版本，修复获取参数默认值异常问题;
+
+### v1.3.8
+1. 更新```apidoc-core```依赖版本;
