@@ -64,7 +64,7 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
      * @param demandable Parameter is demandable
      * @return Parameter document string
      */
-    private static String parameter2document(String define, String parent, Parameter parameter, boolean demandable) {
+    protected String parameter2document(String define, String parent, Parameter parameter, boolean demandable) {
         Objects.requireNonNull(define, "define not specified");
         Objects.requireNonNull(parameter, "parameter not specified");
         StringBuilder document = new StringBuilder();
@@ -78,12 +78,11 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
             document.append(" = ").append(options.stream().map(option -> option.getValue() == null ? option.getKey() :
                     String.format("%s(%s)", option.getKey(), option.getValue())).collect(Collectors.joining(" , ")));
         }
-        Parameter.Size size = parameter.getSize();
-        if (size != null) {
-            String min = size.getMin() == null ? "" :
-                    BigDecimal.valueOf(size.getMin()).stripTrailingZeros().toPlainString();
-            String max = size.getMax() == null ? "" :
-                    BigDecimal.valueOf(size.getMax()).stripTrailingZeros().toPlainString();
+        if (parameter.getSize() != null) {
+            String min = parameter.getSize().getMin() == null ? "" :
+                    BigDecimal.valueOf(parameter.getSize().getMin()).stripTrailingZeros().toPlainString();
+            String max = parameter.getSize().getMax() == null ? "" :
+                    BigDecimal.valueOf(parameter.getSize().getMax()).stripTrailingZeros().toPlainString();
             if (Number.class.isAssignableFrom(parameter.getType())) {
                 document.append(String.format(" { %s-%s }", min, max));
             } else {
@@ -106,8 +105,8 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
             }
             document.append(parameter.getDescription().replace("\n", "\n *\n *"));
         }
-        if (parameter.getFields() != null) {
-            parameter.getFields().forEach(p -> document.append(parameter2document(define, name, p, demandable)));
+        if (parameter.getFields() != null && !parameter.getFields().isEmpty()) {
+            parameter.getFields().forEach(p -> document.append(this.parameter2document(define, name, p, demandable)));
         }
         return document.toString();
     }
@@ -118,14 +117,14 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
      * @param parameter Parameter object
      * @return Parameter example json
      */
-    private static String parameter2example(Parameter parameter) {
+    protected String parameter2example(Parameter parameter) {
         Objects.requireNonNull(parameter, "parameter not specified");
         Class<?> type = parameter.getType();
         String example = parameter.getExample();
         List<Parameter> fields = parameter.getFields();
         if (type == Object.class && fields != null && !fields.isEmpty()) {
-            example = String.format("{%s}", fields.stream().map(f ->
-                    String.format("\"%s\":%s", f.getName(), parameter2example(f))).collect(Collectors.joining(", ")));
+            example = String.format("{%s}", fields.stream().map(f -> String.format("\"%s\":%s", f.getName(),
+                    this.parameter2example(f))).collect(Collectors.joining(", ")));
         } else if (type == Boolean.class) {
             example = example == null ? "true" : example;
         } else if (type == String.class) {
@@ -158,7 +157,7 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
      * @param api Api object
      * @return Api document string
      */
-    private String api2document(Api api) {
+    protected String api2document(Api api) {
         Objects.requireNonNull(api, "api not specified");
         StringBuilder document = new StringBuilder();
         Configuration configuration = ContextHelper.getConfiguration();
@@ -195,19 +194,19 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
         }
         List<Parameter> parameters = api.getParameters();
         if (parameters != null && !parameters.isEmpty()) {
-            parameters.forEach(p -> document.append(parameter2document("@apiParam", null, p, false)));
+            parameters.forEach(p -> document.append(this.parameter2document("@apiParam", null, p, false)));
         }
         Parameter returned = api.getReturned();
         if (returned != null) {
             List<Parameter> fields = returned.getFields();
             if (returned.isMultiple() || fields == null || fields.isEmpty()) {
-                document.append(parameter2document("@apiSuccess", null, returned, true));
+                document.append(this.parameter2document("@apiSuccess", null, returned, true));
             } else {
-                fields.forEach(f -> document.append(parameter2document("@apiSuccess", null, f, true)));
+                fields.forEach(f -> document.append(this.parameter2document("@apiSuccess", null, f, true)));
             }
             if (configuration.isEnableResponseExample()) {
                 document.append("\n * @apiSuccessExample Response");
-                document.append("\n *\n * ").append(parameter2example(returned));
+                document.append("\n *\n * ").append(this.parameter2example(returned));
             }
         }
         document.append("\n */\n");

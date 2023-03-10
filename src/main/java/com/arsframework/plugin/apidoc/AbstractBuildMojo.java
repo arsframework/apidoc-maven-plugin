@@ -255,7 +255,7 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
      * @return Method analyser factory
      * @throws ReflectiveOperationException Reflective operation exception
      */
-    private MethodAnalyser.Factory buildMethodAnalyserFactory() throws ReflectiveOperationException {
+    protected MethodAnalyser.Factory buildMethodAnalyserFactory() throws ReflectiveOperationException {
         String type;
         if (this.analyserFactoryClass == null || (type = this.analyserFactoryClass.trim()).isEmpty()) {
             return MethodAnalyser::new;
@@ -269,7 +269,7 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
      * @throws IOException            IO exception
      * @throws MojoExecutionException Mojo execution exception
      */
-    private void initialize() throws IOException, MojoExecutionException {
+    protected void initialize() throws IOException, MojoExecutionException {
         // Class loader
         URLClassLoader classLoader = this.initializeClassLoader();
         ContextHelper.setClassLoader(classLoader);
@@ -332,7 +332,7 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
      * @param factory Method analyser factory
      * @return Api list
      */
-    private List<Api> getApis(MethodAnalyser.Factory factory) {
+    protected List<Api> getApis(MethodAnalyser.Factory factory) {
         Objects.requireNonNull(factory, "factory not specified");
         return this.sources.keySet().stream().filter(clazz -> DocumentHelper.isApiClass(clazz)
                 && (this.excludeClasses == null
