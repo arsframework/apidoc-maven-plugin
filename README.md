@@ -14,7 +14,7 @@
 <plugin>
     <groupId>com.arsframework</groupId>
     <artifactId>apidoc-maven-plugin</artifactId>
-    <version>1.3.14</version>
+    <version>1.3.15</version>
 </plugin>
 ```
 
@@ -191,4 +191,7 @@
 1. 升级```apidoc-core```依赖版本;
 
 ### v1.3.14
+1. 升级```apidoc-core```依赖版本;
+
+### v1.3.15
 1. 升级```apidoc-core```依赖版本;
