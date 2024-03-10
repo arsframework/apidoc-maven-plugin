@@ -195,3 +195,6 @@
 
 ### v1.3.15
 1. 升级```apidoc-core```依赖版本;
+
+### v1.3.16
+1. 设置```maven-dependency-plugin```插件的```markersDirectory```参数值，并且与```outputDirectory```参数保持一致;

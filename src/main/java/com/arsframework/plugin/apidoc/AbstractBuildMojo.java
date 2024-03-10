@@ -227,7 +227,8 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
                     element("includeScope", "compile"),
                     element("includeGroupIds", String.join(",", ContextHelper.getIncludeGroupIdentities())),
                     element("failOnMissingClassifierArtifact", "false"),
-                    element("outputDirectory", this.dependencySourceDirectory)
+                    element("outputDirectory", this.dependencySourceDirectory),
+                    element("markersDirectory", this.dependencySourceDirectory)
             ), toXpp3Dom(descriptor.getMojoConfiguration()));
             this.manager.executeMojo(this.session, new MojoExecution(descriptor, configuration));
         } catch (Exception e) {
