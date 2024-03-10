@@ -300,6 +300,9 @@ public abstract class AbstractBuildMojo extends AbstractMojo {
             ClassDoc document = this.documents.get(name);
             if (document == null) {
                 String source = this.sources.get(clazz);
+                if (source == null && (clazz = clazz.getDeclaringClass()) != null) {
+                    source = this.sources.get(clazz);
+                }
                 if (source == null) {
                     return null;
                 }

@@ -198,3 +198,6 @@
 
 ### v1.3.16
 1. 设置```maven-dependency-plugin```插件的```markersDirectory```参数值，并且与```outputDirectory```参数保持一致;
+
+### v1.3.17
+1. 修复内部类文档解析失败问题；
