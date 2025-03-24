@@ -17,13 +17,15 @@ package com.arsframework.plugin.apidoc;
  */
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.Writer;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Date;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -51,9 +53,26 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
     /**
      * Output file of api document
      */
-    @org.apache.maven.plugins.annotations.Parameter(
-            defaultValue = "${project.basedir}/${project.name}.apidoc", required = true)
+    @org.apache.maven.plugins.annotations.Parameter(defaultValue = "${project.basedir}/apidoc", required = true)
     private String output;
+
+    /**
+     * 文件名特殊符号转义
+     *
+     * @param name 文件名
+     * @return 文件名
+     */
+    private String escape(String name) {
+        char[] chars = name.toCharArray();
+        for (int i = 0, size = chars.length; i < size; i++) {
+            char c = chars[i];
+            if (c == '\\' || c == '/' || c == '*' || c == '?'
+                    || c == '<' || c == '>' || c == '|' || c == ':' || c == '`') {
+                chars[i] = '_';
+            }
+        }
+        return new String(chars);
+    }
 
     /**
      * Convert the parameter to document
@@ -218,29 +237,21 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
         if (apis == null || apis.isEmpty()) {
             return;
         }
-        this.getLog().info("Building apidoc: " + this.output);
 
-        // Write document file
-        try (Writer writer = new BufferedWriter(new FileWriter(this.output))) {
-            // Override api group
-            Map<String, String> groupDefineMappings = new LinkedHashMap<>();
-            int index = 1;
-            for (Api api : apis) {
-                String group = api.getGroup();
-                String define = groupDefineMappings.get(group);
-                if (define == null) {
-                    define = "Group" + index++;
-                    groupDefineMappings.put(group, define);
-                    writer.write("\n/**");
-                    writer.write("\n * @apiDefine ".concat(define).concat(" ").concat(group));
-                    writer.write("\n */\n");
+        File path = Files.createDirectories(Paths.get(this.output)).toFile();
+        Map<String, List<Api>> groups = apis.stream().collect(Collectors.groupingBy(Api::getGroup));
+        for (Map.Entry<String, List<Api>> entry : groups.entrySet()) {
+            File file = new File(path, this.escape(entry.getKey()) + ".apidoc");
+            this.getLog().info("Building apidoc: " + file.getPath());
+            try (Writer writer = new BufferedWriter(new FileWriter(file))) {
+                writer.write("\n/**");
+                writer.write("\n * @apiDefine Group " + entry.getKey());
+                writer.write("\n */\n");
+
+                for (Api api : entry.getValue()) {
+                    api.setGroup("Group");
+                    writer.write(this.api2document(api));
                 }
-                api.setGroup(define);
-            }
-
-            // Build api document
-            for (Api api : apis) {
-                writer.write(this.api2document(api));
             }
         }
     }
