@@ -53,7 +53,7 @@ public class ApidocBuildMojo extends AbstractBuildMojo {
     /**
      * Output file of api document
      */
-    @org.apache.maven.plugins.annotations.Parameter(defaultValue = "${project.basedir}/apidoc", required = true)
+    @org.apache.maven.plugins.annotations.Parameter(defaultValue = "${project.basedir}/target/apidoc", required = true)
     private String output;
 
     /**
